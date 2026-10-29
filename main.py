@@ -42,7 +42,7 @@ async def lifespan(app: FastAPI):
         await db.close_db()
 
 
-app = FastAPI(title='Future Now Website API', version='1.0.0', lifespan=lifespan)
+app = FastAPI(title='Future Now Website API', version='1.0.1', lifespan=lifespan)
 app.state.ready = False
 app.state.configuration_error = ''
 install_api(app)

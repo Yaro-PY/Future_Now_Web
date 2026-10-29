@@ -65,6 +65,7 @@ class APITests(unittest.IsolatedAsyncioTestCase):
             'country': 'ukraine', 'city': 'kyiv', 'format': 'online'})
         self.assertEqual(response.status_code, 200, response.text)
         self.assertFalse(response.json()['onboarding_required'])
+        self.assertTrue(response.json()['filters_setup_required'])
         self.assertEqual(response.json()['public_id'], public_id)
         self.assertEqual((await self.request('PUT', '/me/filters', json={'country': 'europe'})).status_code, 200)
         response = await self.request('PATCH', '/me/settings', json={'language': 'en'})
@@ -107,6 +108,51 @@ class APITests(unittest.IsolatedAsyncioTestCase):
         response = await self.request('POST', '/auth/password', json={'current_password': PASSWORD, 'new_password': PASSWORD + '-new'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual((await self.client.get('/api/v1/me')).status_code, 401)
+
+    async def seed_bot_login(self):
+        await db.get_account(ADMIN)
+        await db.save_profile(ADMIN, {'nickname':'bot_existing','display_name':'Existing User',
+            'age':'16-18','country':'ukraine','city':'kyiv','format':'online','criteria':['free']})
+        await auth.set_bot_password_hash(ADMIN, await auth.hash_password(PASSWORD))
+
+    async def bot_login(self):
+        response = await self.client.post('/api/v1/auth/login',json={'nickname':'bot_existing','password':PASSWORD})
+        self.assertEqual(response.status_code,200,response.text)
+        return response.json()['user']
+
+    async def test_bot_profile_without_search_history_skips_website_onboarding(self):
+        await self.seed_bot_login()
+        user = await self.bot_login()
+        self.assertFalse(user['onboarding_required'])
+        self.assertFalse(user['filters_setup_required'])
+        self.assertEqual({key:user['filters'][key] for key in ('age','country','city','format','criteria')},
+            {'age':'16-18','country':'ukraine','city':'kyiv','format':'online','criteria':['free']})
+        self.assertEqual((await db.get_account(ADMIN)).search_defaults,{})
+        resumed = (await self.client.get('/api/v1/auth/session')).json()['user']
+        self.assertFalse(resumed['onboarding_required'])
+        self.assertFalse(resumed['filters_setup_required'])
+
+    async def test_legacy_bot_age_is_normalized_without_profile_rewrite(self):
+        await self.seed_bot_login()
+        for legacy,expected in ((17,'16-18'),('13-14','13-16'),('15-17','16-18')):
+            account = await db.get_account(ADMIN)
+            account.profile = {**account.profile,'age':legacy}
+            await db.save_account(account)
+            user = await self.bot_login()
+            self.assertFalse(user['onboarding_required'])
+            self.assertFalse(user['filters_setup_required'])
+            self.assertEqual(user['profile']['age'],expected)
+            self.assertEqual(user['filters']['age'],expected)
+            self.assertEqual((await db.get_account(ADMIN)).profile['age'],legacy)
+
+    async def test_incomplete_bot_profile_still_requires_onboarding(self):
+        await self.seed_bot_login()
+        account = await db.get_account(ADMIN)
+        account.profile = {**account.profile,'age':'any'}
+        await db.save_account(account)
+        user = await self.bot_login()
+        self.assertTrue(user['onboarding_required'])
+        self.assertTrue(user['filters_setup_required'])
 
     async def test_search_and_expired_favorites(self):
         await self.register()

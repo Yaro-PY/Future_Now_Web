@@ -19,7 +19,7 @@ import database as db
 import web_auth as auth
 import web_schemas as schema
 from flow_catalog import CATALOGS, CRITERIA, FIELDS, TOPICS, TYPES, CITIES, COUNTRIES, FORMATS, label, tr
-from identity import AGE_GROUPS, identity_complete
+from identity import identity_complete, age_group
 from links import check_link
 from catalog_status import catalog_status
 
@@ -157,13 +157,21 @@ def effective_filters(account):
 def user_out(account):
     profile = account.profile or {}
     visible = {key: profile[key] for key in ('nickname', 'display_name', 'public_id', 'profile_updated_at', 'age', 'country', 'city', 'format', 'criteria') if key in profile}
+    try:
+        visible['age'] = age_group(profile.get('age'))
+        profile_complete = identity_complete(profile)
+    except ValueError:
+        profile_complete = False
+    # A completed Telegram profile already supplies usable search preferences.
+    # New website registrations still complete their initial filter step.
+    needs_filters = not bool(account.search_defaults) and not (account.telegram_id > 0 and profile_complete)
     return schema.UserOut(public_id=profile.get('public_id'), nickname=profile.get('nickname'),
         display_name=profile.get('display_name'), language=account.language,
         role='admin' if db.admin_user(account.telegram_id) else 'user', telegram_linked=account.telegram_id > 0,
         profile=visible or None, filters=effective_filters(account),
         notifications=schema.Notifications.model_validate(account.notifications),
-        onboarding_required=not identity_complete(profile) or profile.get('age') not in AGE_GROUPS,
-        filters_setup_required=not bool(account.search_defaults))
+        onboarding_required=not profile_complete,
+        filters_setup_required=needs_filters)
 
 
 async def login_response(credential, request, response):
