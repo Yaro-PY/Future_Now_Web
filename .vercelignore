@@ -1,0 +1,11 @@
+.git
+.venv
+.qa
+.idea
+.env
+.env.*
+*.db
+*.db-*
+__pycache__
+tests
+frontend/node_modules

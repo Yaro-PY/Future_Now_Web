@@ -1,0 +1,24 @@
+{
+  "opportunities": [
+    {
+      "title": "DEMO — replace with a real opportunity before importing",
+      "url": "https://example.org/demo-opportunity",
+      "source": "Schema example; not a real opportunity",
+      "description": "This file documents the JSON import format. It is not imported automatically.",
+      "event_type": "exchange",
+      "topics": ["education", "international"],
+      "country": "europe",
+      "city": "",
+      "format": "offline",
+      "min_age": 18,
+      "max_age": 30,
+      "start_at": "2030-11-20T10:00:00+02:00",
+      "deadline": "2030-11-01",
+      "is_free": true,
+      "criteria": ["funded", "travel", "housing", "meals", "certificate"],
+      "organizer": "Replace with organizer",
+      "participation_language": "English",
+      "requirements": "Replace with the actual eligibility requirements"
+    }
+  ]
+}

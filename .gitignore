@@ -1,0 +1,12 @@
+.venv/
+.qa/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+.vercel/
+.idea/
+frontend/node_modules/
