@@ -56,3 +56,7 @@
   .direction-body > span:last-child { font-size: 14px; }
   .help-shortcuts .button { flex-grow: 1; white-space: normal; }
 }
+
+/* Account ownership and author proposal controls. */
+.proposal-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;max-width:260px}.proposal-actions .button{min-height:44px}.status.withdrawn{color:#7d8797}.status.withdrawn:before{background:#98a1ae}.button.danger{background:#9e3546;border:1px solid #9e3546;color:#fff}.button.danger:hover{background:#852c3c}.account-controls>.subtext{font-size:12px;line-height:1.8;max-width:560px;color:#738097}.recovery-link{margin-top:16px;font-size:12px;color:#b8c1d3;min-height:36px}.recovery-steps{padding-left:21px;margin:0 0 24px;color:#68758c;font-size:13px;line-height:1.8}.recovery-steps li+li{margin-top:15px}.modal-body .recovery-note{padding-top:18px;border-top:1px solid var(--line);color:#718099}.delete-acknowledgement{font-size:12px;line-height:1.7;margin:20px 0}.delete-acknowledgement input{flex-shrink:0}
+@media(max-width:600px){.proposal-row{flex-wrap:wrap;gap:12px}.proposal-actions{width:100%;max-width:none;justify-content:flex-start}.proposal-actions .button{flex:1}.account-controls .form-actions{flex-wrap:wrap}.account-controls .button{min-height:44px}.recovery-steps{font-size:13px}.recovery-link{min-height:44px}.delete-acknowledgement{align-items:flex-start}}

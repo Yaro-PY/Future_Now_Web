@@ -46,6 +46,12 @@ export class FutureNowAPI {
   removeFavorite(id) { return this.request('/me/favorites/' + encodeURIComponent(id), { method: 'DELETE' }); }
   subscribe(id, enabled) { return this.request('/me/subscriptions/' + encodeURIComponent(id), { method: 'PUT', body: { enabled } }); }
   suggest(values) { return this.request('/me/proposals', { method: 'POST', body: values }); }
+  editProposal(item, values) { return this.request(`/me/proposals/${item.id}`, {method:'PATCH',body:{expected_revision:item.revision,values}}); }
+  withdrawProposal(item) { return this.request(`/me/proposals/${item.id}/withdraw`, {method:'POST',body:{expected_revision:item.revision}}); }
+  async deleteAccount(password, confirmation) {
+    await this.request('/me', {method:'DELETE',body:{password,confirmation}});
+    this.csrfToken = null;
+  }
   myProposals() { return this.request('/me/proposals'); }
   report(values) { return this.request('/me/reports', { method: 'POST', body: values }); }
   async changePassword(current_password, new_password) {

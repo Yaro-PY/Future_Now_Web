@@ -22,7 +22,7 @@ export function ProfilePage() {
     </DataForm></section></div></main>;
 }
 export function SettingsPage() {
-  const {user, setUser, api, t, toast, passwordChanged} = useApp();
+  const {user, setUser, api, t, toast, passwordChanged, setModal} = useApp();
   return <main className="page content-page" id="main-content"><PageHeading title="settingsTitle" subtitle="settingsSubtitle" action={false} /><div className="content-layout"><AccountRail /><section>
     <section className="form-section"><h2>{t('language')}</h2><LanguageSwitch /></section>
     <DataForm kind="notifications" className="form-section" onSubmit={async data => { setUser(await api.saveSettings({notifications:{new:data.has('new'),deadlines:data.has('deadlines'),expired:data.has('expired')}})); toast(t('savedNotice')); }}><h2>{t('notifications')}</h2>
@@ -33,6 +33,8 @@ export function SettingsPage() {
       if (data.get('new_password') !== data.get('confirmation')) throw new Error(t('mismatch'));
       await api.changePassword(String(data.get('current_password')),String(data.get('new_password'))); passwordChanged();
     }}><h2>{t('security')}</h2><div className="stack"><Password name="current_password" label={t('currentPassword')} /><Password name="new_password" label={t('newPassword')} autoComplete="new-password" minLength={12} /><Password name="confirmation" label={t('confirmPassword')} autoComplete="new-password" minLength={12} /></div><div className="form-actions"><Submit kind="secondary">{t('changePassword')}</Submit></div></DataForm>
+    <section className="form-section account-controls"><h2>{t('accountAccess')}</h2><p className="subtext">{t(user.telegram_linked ? 'recoveryLinked' : 'recoveryNeedsLink')}</p><div className="form-actions"><button type="button" className="button secondary" data-action="recover-access" onClick={() => setModal({type:'recover-access'})}>{t('recoverAccess')}</button>{!user.telegram_linked && <a className="button line" href={BOT_URL} target="_blank" rel="noopener noreferrer">{t('openBot')}<Icon name="external" /></a>}</div></section>
+    <section className="form-section account-controls"><h2>{t('deleteAccount')}</h2><p className="subtext">{t('deleteAccountPreview')}</p><div className="form-actions"><button type="button" className="button danger" data-action="delete-account" onClick={() => setModal({type:'delete-account'})}>{t('deleteAccount')}</button></div></section>
   </section></div></main>;
 }
 export function AboutPage() {

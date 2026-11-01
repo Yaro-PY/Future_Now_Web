@@ -4,6 +4,7 @@ import {Icon} from './Icons.jsx';
 import {AsyncButton, Button, Close, Criteria, DataForm, Dialog, Field, Select, Skeletons, Submit} from './Common.jsx';
 import {FavoriteButton, FilterForm, Price} from '../pages/Catalog.jsx';
 import {ProposalForm} from '../pages/Proposals.jsx';
+import {AccountActions} from '../pages/AccountActions.jsx';
 import {PublishedEditor, ReportReview} from '../pages/Administration.jsx';
 
 function Fact({label, children}) { return <div><dt>{label}</dt><dd>{children}</dd></div>; }
@@ -74,12 +75,14 @@ export function ModalContent() {
   const {modal, setModal, api, t, date, options, toast, reload, config} = useApp();
   const close = () => setModal(null);
   async function decide(decision, reason = '') {
-    await api.request(`/admin/proposals/${modal.item.id}/decision`,{method:'POST',body:{decision,reason}});
+    await api.request(`/admin/proposals/${modal.item.id}/decision`,{method:'POST',body:{decision,reason,expected_revision:modal.item.revision}});
     close(); toast(t('decisionSaved')); reload();
   }
   if (modal.type === 'onboarding') return <Onboarding />;
   if (modal.type === 'edit-published') return <Dialog title={t('editListing')} className="modal wide-modal" onClose={close}><PublishedEditor item={modal.item}/></Dialog>;
   if (modal.type === 'review-report') return <Dialog title={t('processReport')} onClose={close}><ReportReview item={modal.item}/></Dialog>;
+  if (['recover-access','delete-account','withdraw-proposal'].includes(modal.type)) return <AccountActions />;
+  if (modal.type === 'edit-own-proposal') return <Dialog title={t('edit')} className="modal wide-modal" onClose={close}><div className="modal-body"><ProposalForm key={`${modal.item.id}:${modal.item.revision}`} item={modal.item} owner /></div></Dialog>;
   if (modal.type === 'sources') return <Dialog title={t('catalogSources')} onClose={close}><div className="modal-body"><p>{t('catalogSourceInfo')}</p><div className="source-list">{config?.catalog?.sources?.map(source => <article key={source.key}><a href={safeExternal(source.url)} target="_blank" rel="noopener noreferrer">{source.name}<Icon name="external" /></a><span>{t(source.status === 'ok' ? 'sourceOk' : source.status === 'partial' ? 'sourcePartial' : 'sourceFailed')}</span><small>{source.last_success_at ? t('catalogUpdated',{date:date(source.last_success_at)}) : t('catalogNeverChecked')}</small></article>)}</div></div></Dialog>;
   if (modal.type === 'filters') return <Dialog title={t('filters')} onClose={close}><div className="modal-body filter-modal"><FilterForm /></div></Dialog>;
   if (['how','bot-help'].includes(modal.type)) return <Dialog title={t('howItWorks')} onClose={close}><div className="modal-body"><p>{modal.type === 'bot-help' ? t('botPasswordHint') : ['aboutText','aboutOneText','aboutTwoText','aboutThreeText'].map(key => t(key)).join('\n\n')}</p><div className="form-actions"><a className="button primary" href={BOT_URL} target="_blank" rel="noopener noreferrer">{t('openBot')}<Icon name="external" /></a></div></div></Dialog>;

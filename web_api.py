@@ -44,6 +44,9 @@ MESSAGES = {
     'link_unavailable': ('Посилання зараз недоступне.', 'The link is currently unavailable.'),
     'opportunity_expired': ('Можливість завершена.', 'This opportunity has expired.'),
     'edit_conflict': ('Запис уже змінено. Оновіть його та повторіть редагування.', 'This record has changed. Reload it before editing again.'),
+    'invalid_current_password': ('Неправильний поточний пароль.', 'Incorrect current password.'),
+    'delete_confirmation': ('Для підтвердження введіть свій нік точно як у профілі.', 'Type your nickname exactly as shown in your profile to confirm.'),
+    'proposal_not_pending': ('Пропозиція вже опрацьована або відкликана. Її не можна змінити.', 'This proposal has been reviewed or withdrawn and can no longer be changed.'),
     'duplicate_url': ('Оголошення з таким посиланням уже існує.', 'A listing with this URL already exists.'),
 }
 
@@ -141,7 +144,10 @@ async def changing_user(request: Request, csrf_header: str | None = Header(None,
         fail('csrf_failed', 403)
     async with db.distributed_lock(f'user:{user.account.telegram_id}') as acquired:
         if not acquired: fail('account_busy', 409)
-        yield user
+        # A reset/deletion may have completed while this request waited for the lock.
+        fresh = await optional_user(request)
+        if fresh is None: fail('authentication_required', 401)
+        yield fresh
 
 
 def effective_filters(account):
@@ -218,6 +224,19 @@ async def password(body: schema.PasswordChange, request: Request, response: Resp
     await auth.change_password(user.credential.id, body.current_password.get_secret_value(), body.new_password.get_secret_value())
     clear_cookies(response)
     return {'ok': True, 'reauthentication_required': True}
+
+
+@router.delete('/me', status_code=204, tags=['Authentication'])
+async def delete_me(body: schema.AccountDelete, user: Principal = Depends(changing_user)):
+    await auth.reserve_attempt('delete-account:' + user.credential.id, 5)
+    try:
+        await auth.delete_website_account(user.credential.id, body.password.get_secret_value(), body.confirmation)
+    except auth.AuthError as error:
+        if error.code == 'invalid_credentials': fail('invalid_current_password', 403)
+        raise
+    response = Response(status_code=204)
+    clear_cookies(response)
+    return response
 
 
 @router.get('/bootstrap')
@@ -388,7 +407,7 @@ async def report(body: schema.Report, user: Principal = Depends(changing_user)):
 
 
 def proposal_out(row):
-    return schema.ProposalOut(id=row.id, payload=row.payload, status=row.status, created_at=row.created_at,
+    return schema.ProposalOut(id=row.id, revision=row.revision, updated_at=row.updated_at, payload=row.payload, status=row.status, created_at=row.created_at,
                               reviewed_at=row.reviewed_at, review_note=row.review_note, event_id=row.event_id)
 
 
@@ -414,6 +433,28 @@ async def my_proposals(page: int = Query(1, ge=1), page_size: int = Query(10, ge
     return await proposals_page(user.account.telegram_id, page, page_size)
 
 
+@router.get('/me/proposals/{submission_id}', response_model=schema.ProposalOut)
+async def my_proposal(submission_id: int, user: Principal = Depends(current_user)):
+    row = await db.get_submission(submission_id)
+    if not row or row.telegram_id != user.account.telegram_id: fail('not_found', 404)
+    return proposal_out(row)
+
+
+@router.patch('/me/proposals/{submission_id}', response_model=schema.ProposalOut)
+async def edit_my_proposal(submission_id: int, body: schema.ProposalEdit, user: Principal = Depends(changing_user)):
+    error = await db.change_own_submission(submission_id, user.account.telegram_id, body.expected_revision,
+                                           body.values.model_dump(mode='json'))
+    if error: fail(error, 404 if error == 'not_found' else 422 if error == 'submission_expired' else 409)
+    return proposal_out(await db.get_submission(submission_id))
+
+
+@router.post('/me/proposals/{submission_id}/withdraw', response_model=schema.ProposalOut)
+async def withdraw_my_proposal(submission_id: int, body: schema.Revision, user: Principal = Depends(changing_user)):
+    error = await db.change_own_submission(submission_id, user.account.telegram_id, body.expected_revision)
+    if error: fail(error, 404 if error == 'not_found' else 409)
+    return proposal_out(await db.get_submission(submission_id))
+
+
 def require_admin(user):
     if not db.admin_user(user.account.telegram_id): fail('admin_required', 403)
 
@@ -425,11 +466,11 @@ async def moderation(page: int = Query(1, ge=1), page_size: int = Query(10, ge=1
 
 
 @router.patch('/admin/proposals/{submission_id}', response_model=schema.ProposalOut, tags=['Moderation'])
-async def edit_proposal(submission_id: int, body: schema.Proposal, user: Principal = Depends(changing_user)):
+async def edit_proposal(submission_id: int, body: schema.AdminProposal, user: Principal = Depends(changing_user)):
     require_admin(user)
     if not await db.get_submission(submission_id): fail('not_found', 404)
-    if not await db.edit_submission(submission_id, user.account.telegram_id, body.model_dump(mode='json')):
-        fail('moderation_changed', 409)
+    if not await db.edit_submission(submission_id, user.account.telegram_id, body.model_dump(mode='json', exclude={'expected_revision'}), expected_revision=body.expected_revision):
+        fail('edit_conflict', 409)
     return proposal_out(await db.get_submission(submission_id))
 
 
@@ -440,7 +481,8 @@ async def decision(submission_id: int, body: schema.Decision, user: Principal = 
     if not row: fail('not_found', 404)
     if body.decision == 'rejected' and not 5 <= len(body.reason.strip()) <= 500: fail('invalid_request', 422)
     if body.decision == 'approved' and not await check_link(row.payload['url']): fail('moderation_link', 409)
-    result = await db.moderate_submission(submission_id, user.account.telegram_id, body.decision, body.reason)
+    result = await db.moderate_submission(submission_id, user.account.telegram_id, body.decision, body.reason,
+                                           expected_revision=body.expected_revision if body.expected_revision is not None else row.revision)
     if result != 'moderation_done': fail(result, 409)
     return proposal_out(await db.get_submission(submission_id))
 

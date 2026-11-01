@@ -65,6 +65,11 @@ class PasswordChange(Input):
     new_password: SecretStr = Field(min_length=12, max_length=128)
 
 
+class AccountDelete(Input):
+    password: SecretStr = Field(min_length=1, max_length=128)
+    confirmation: str = Field(min_length=3, max_length=32)
+
+
 class Profile(Input):
     nickname: str
     display_name: str
@@ -134,7 +139,20 @@ class Proposal(Opportunity):
         return canonical_url(str(value))
 
 
+class Revision(Input):
+    expected_revision: int = Field(ge=1)
+
+
+class ProposalEdit(Revision):
+    values: Proposal
+
+
+class AdminProposal(Proposal):
+    expected_revision: int | None = Field(default=None, ge=1)
+
+
 class Decision(Input):
+    expected_revision: int | None = Field(default=None, ge=1)
     decision: Literal['approved', 'rejected']
     reason: str = Field(default='', max_length=500)
 
@@ -239,6 +257,8 @@ class EventPage(BaseModel):
 
 
 class ProposalOut(BaseModel):
+    revision: int
+    updated_at: datetime
     id: int
     payload: Opportunity
     status: str

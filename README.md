@@ -178,3 +178,8 @@ await api.saveSettings({ language: 'en' });
 Перед перевірками зберіть React командою `npm run build --prefix frontend`. Тести сайту використовують окремі бази й не потребують aiogram. Перевіряються вхід, фільтри/обране, пароль, сесії, CSRF, ліміти входу, пропозиції, віддавання React-збірки та перезапуск HTTP-сервера. У папці бота є окремі інтеграційні перевірки спільного входу, двосторонніх фільтрів та модерації з імітацією Telegram.
 
 Механізми хешування й cookie звірені з офіційною документацією [FastAPI](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/), [CORS](https://fastapi.tiangolo.com/tutorial/cors/) та [Starlette](https://starlette.dev/responses/).
+
+
+## Пропозиції та доступ до акаунта
+
+Редагування та відкликання власних пропозицій до перевірки, відновлення доступу через Telegram і видалення спільного профілю описано в [USER_CONTROLS.md](USER_CONTROLS.md). Перед оновленням Vercel виконайте [міграцію 002](migrations/002_user_controls.sql) один раз у спільній Neon.

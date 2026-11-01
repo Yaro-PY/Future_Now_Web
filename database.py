@@ -110,6 +110,8 @@ class Submission(Base):
     reviewed_by: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
     review_note: Mapped[str] = mapped_column(String(500), default='')
     event_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 class User(Base):
     """Original profile table retained for migration."""
@@ -234,6 +236,12 @@ class EventData:
 
 def _migrate(conn):
     """Additive, repeatable migration of the original events table."""
+    submission_columns = {c['name'] for c in inspect(conn).get_columns('submissions')}
+    if 'revision' not in submission_columns:
+        conn.execute(text('ALTER TABLE submissions ADD COLUMN revision INTEGER NOT NULL DEFAULT 1'))
+    if 'updated_at' not in submission_columns:
+        conn.execute(text("ALTER TABLE submissions ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT '1970-01-01 00:00:00'"))
+        conn.execute(text('UPDATE submissions SET updated_at=created_at'))
     columns = {c['name'] for c in inspect(conn).get_columns('events')}
     additions = {
         'created_at': "TIMESTAMP NOT NULL DEFAULT '1970-01-01 00:00:00'",
@@ -497,7 +505,8 @@ async def database_ready(require_schema=False):
         if require_schema:
             for column in (Credential.id, WebSession.token_hash, AuthThrottle.key, Event.is_self_paced, Event.is_closed, Event.verified_at, CatalogSource.key,
                            Event.revision, Event.admin_overrides, Event.source_url, Event.admin_updated_at, Event.admin_updated_by,
-                           Report.status, Report.review_note, Report.reviewed_by, Report.updated_at, Report.resolved_at, Report.revision, AdminAudit.id):
+                           Report.status, Report.review_note, Report.reviewed_by, Report.updated_at, Report.resolved_at, Report.revision, AdminAudit.id,
+                           Submission.revision, Submission.updated_at):
                 await session.execute(select(column).limit(1))
 
 
@@ -549,7 +558,7 @@ async def submit_proposal(telegram_id, payload):
             return None, 'proposal_duplicate'
         return obj.id, None
 
-async def edit_submission(submission_id, actor, payload):
+async def edit_submission(submission_id, actor, payload, expected_revision=None):
     from import_events import Opportunity
     from proposals import canonical_url
     if not admin_user(actor): raise PermissionError('Admin only')
@@ -557,13 +566,17 @@ async def edit_submission(submission_id, actor, payload):
     async with Session() as session:
         obj = await session.scalar(select(Submission).where(Submission.id == submission_id).with_for_update())
         if not obj or obj.status != 'pending': return False
+        if expected_revision is not None and obj.revision != expected_revision: return False
         # The original URL/fingerprint cannot be silently changed during review.
         if canonical_url(validated['url']) != canonical_url(obj.payload['url']): return False
-        obj.payload = validated
+        result = await session.execute(update(Submission).where(Submission.id == obj.id,
+            Submission.status == 'pending', Submission.revision == obj.revision).values(
+                payload=validated, revision=Submission.revision + 1, updated_at=utcnow()))
+        if result.rowcount != 1: return False
         await session.commit()
         return True
 
-async def moderate_submission(submission_id, actor, decision, reason=''):
+async def moderate_submission(submission_id, actor, decision, reason='', expected_revision=None):
     from import_events import Opportunity
     from proposals import canonical_url
     if not admin_user(actor): raise PermissionError('Admin only')
@@ -572,6 +585,7 @@ async def moderate_submission(submission_id, actor, decision, reason=''):
     async with Session() as session:
         obj = await session.scalar(select(Submission).where(Submission.id == submission_id).with_for_update())
         if not obj or obj.status != 'pending': return 'moderation_changed'
+        if expected_revision is not None and obj.revision != expected_revision: return 'edit_conflict'
         if decision == 'approved':
             data = Opportunity.model_validate(obj.payload).event()
             if event_status(Event(**{key: getattr(data, key) for key in data.__dataclass_fields__})) == 'expired': return 'submission_expired'
@@ -584,12 +598,58 @@ async def moderate_submission(submission_id, actor, decision, reason=''):
             result = await session.execute(insert_for(Event).values(**values).on_conflict_do_nothing())
             if result.rowcount == 0: return 'proposal_duplicate'
             obj.event_id = await session.scalar(select(Event.id).where(Event.external_id == data.external_id))
-        obj.status = decision
-        obj.reviewed_by = actor
-        obj.reviewed_at = utcnow()
-        obj.review_note = reason.strip()
+        # A concurrent author edit/withdrawal must also roll back any event inserted above.
+        result = await session.execute(update(Submission).where(Submission.id == obj.id,
+            Submission.status == 'pending', Submission.revision == obj.revision).values(
+                status=decision, reviewed_by=actor, reviewed_at=utcnow(), review_note=reason.strip(),
+                event_id=obj.event_id, revision=Submission.revision + 1, updated_at=utcnow()))
+        if result.rowcount != 1:
+            await session.rollback()
+            return 'edit_conflict'
         await session.commit()
         return 'moderation_done'
+
+
+async def change_own_submission(submission_id, actor, expected_revision, payload=None):
+    """Author-only compare-and-swap; withdrawn rows retain spam limits and history."""
+    from import_events import Opportunity
+    from proposals import canonical_url
+    from sqlalchemy.exc import IntegrityError
+    validated = None
+    if payload is not None:
+        validated = Opportunity.model_validate(payload).model_dump(mode='json')
+        validated['source'] = 'Пропозиція користувача / User suggestion'
+        validated['url'] = canonical_url(validated['url'])
+        event = Opportunity.model_validate(validated).event()
+        if event_status(Event(**event.__dict__)) == 'expired': return 'submission_expired'
+    async with Session() as session:
+        obj = await session.scalar(select(Submission).where(Submission.id == submission_id,
+            Submission.telegram_id == actor).with_for_update())
+        if not obj: return 'not_found'
+        if obj.status != 'pending': return 'proposal_not_pending'
+        if obj.revision != expected_revision: return 'edit_conflict'
+        values = {'revision': Submission.revision + 1, 'updated_at': utcnow()}
+        if validated is None:
+            values['status'] = 'withdrawn'
+        else:
+            fingerprint = hashlib.sha256(validated['url'].encode()).hexdigest()
+            if await session.scalar(select(Submission.id).where(Submission.fingerprint == fingerprint,
+                                                               Submission.id != obj.id)):
+                return 'proposal_duplicate'
+            for url in (await session.scalars(select(Event.url))).all():
+                try:
+                    if canonical_url(url) == validated['url']: return 'proposal_duplicate'
+                except ValueError: continue
+            values.update(payload=validated, fingerprint=fingerprint)
+        result = await session.execute(update(Submission).where(Submission.id == obj.id,
+            Submission.telegram_id == actor, Submission.status == 'pending',
+            Submission.revision == expected_revision).values(**values))
+        if result.rowcount != 1: return 'edit_conflict'
+        try: await session.commit()
+        except IntegrityError:
+            await session.rollback()
+            return 'proposal_duplicate'
+        return None
 
 async def pending_decisions():
     async with Session() as session:

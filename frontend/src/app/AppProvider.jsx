@@ -160,6 +160,7 @@ export function AppProvider({children}) {
     page, setPage, collection, collectionError, proposalPage, proposalError, savedCount, menuOpen, setMenuOpen,
     modal, setModal, detailId, setDetailId, toast, fail, errorMessage, enter, changeLanguage, toggleFavorite, refreshCatalog,
     reload:() => setRevision(value => value + 1), logout:async () => { await api.logout(); clearSession(); },
+    accountDeleted:() => { clearSession(); setFilters({...ANY_FILTERS,criteria:[]}); setQuery(''); setSearchQuery(''); toast(t('accountDeleted')); },
     passwordChanged:() => { clearSession(); toast(t('passwordChanged')); },
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

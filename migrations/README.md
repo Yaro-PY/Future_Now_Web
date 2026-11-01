@@ -9,3 +9,8 @@ After execution, check the website `/health`, which should return `OK`. Publish 
 The generated SQL was exercised twice against empty and legacy-shaped databases in isolated PGlite PostgreSQL tests. These checks do not mean the migration has already been run against Neon. No production connection strings or data are included.
 
 References: [PostgreSQL DO](https://www.postgresql.org/docs/current/sql-do.html), [ALTER TABLE](https://www.postgresql.org/docs/current/sql-altertable.html).
+
+
+## User controls update
+
+After the base schema, run `002_user_controls.sql` before deploying the user-controls release of both apps. It adds submissions.revision and submissions.updated_at in one atomic, repeatable DO statement and retains existing rows. Do not create a separate database or branch. See [USER_CONTROLS.md](../USER_CONTROLS.md).

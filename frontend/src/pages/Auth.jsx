@@ -26,7 +26,7 @@ export function AuthPage() {
           <Password name="password" label={t('password')} autoComplete={registering ? 'new-password' : 'current-password'} minLength={registering ? 12 : 1} />
           {registering && <Password name="confirmation" label={t('confirmPassword')} autoComplete="new-password" minLength={12} />}{registering && <p className="subtext">{t('passwordHint')}</p>}
           <Submit wide>{t(registering ? 'register' : 'continue')}<Icon name="arrow" /></Submit>
-        </DataForm><div className="auth-bot-note">{t('botLoginHint')}<br /><button type="button" data-action="bot-help" onClick={() => setModal({type:'bot-help'})}>{t('howItWorks')} <Icon name="external" /></button></div>
+        </DataForm>{!registering && <button type="button" className="text-button recovery-link" data-action="recover-access" onClick={() => setModal({type:'recover-access'})}>{t('forgotPassword')}</button>}<div className="auth-bot-note">{t('botLoginHint')}<br /><button type="button" data-action="bot-help" onClick={() => setModal({type:'bot-help'})}>{t('howItWorks')} <Icon name="external" /></button></div>
       </section></main><footer className="auth-footer"><span>{t('authFooter')}</span><span className="coordinates">MADE FOR WHAT’S NEXT</span></footer>
   </div>;
 }

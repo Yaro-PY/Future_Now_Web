@@ -93,10 +93,10 @@ async def set_bot_password_hash(account_id, encoded):
         async with db.Session() as session:
             await _claim_lock(session)
             account = await session.get(db.Account, account_id)
-            if not account or not identity_complete(account.profile):
-                raise AuthError('profile_required', 409)
-            nickname = normalize_nickname(account.profile['nickname'])
             credential = await session.scalar(select(db.Credential).where(db.Credential.account_id == account_id))
+            if not account or (not credential and not identity_complete(account.profile)):
+                raise AuthError('profile_required', 409)
+            nickname = credential.nickname if credential else normalize_nickname(account.profile['nickname'])
             claimed = await session.scalar(select(db.Credential.id).where(db.Credential.nickname == nickname,
                                                                           db.Credential.account_id != account_id))
             if claimed: raise AuthError('nickname_taken', 409)
@@ -199,6 +199,55 @@ async def change_password(credential_id, old_password, new_password):
         current.password_hash = encoded
         await session.execute(delete(db.WebSession).where(db.WebSession.credential_id == credential_id))
         await session.commit()
+
+
+async def delete_website_account(credential_id, password, confirmation):
+    """Reauthenticate before erasing the one shared bot/site account."""
+    async with db.Session() as session:
+        credential = await session.get(db.Credential, credential_id)
+    if not credential or not await verify_password(password, credential.password_hash):
+        raise AuthError('invalid_credentials', 401)
+    if confirmation.strip() != credential.nickname:
+        raise AuthError('delete_confirmation', 422)
+    await _erase_account(credential.account_id, credential)
+
+
+async def delete_bot_account(account_id, confirmation):
+    """Private-chat caller must use the Telegram-verified sender ID, never an input ID."""
+    if account_id <= 0: raise AuthError('invalid_request', 422)
+    async with db.Session() as session:
+        account = await session.get(db.Account, account_id)
+    if not account: raise AuthError('authentication_required', 401)
+    nickname = (account.profile or {}).get('nickname') or 'DELETE'
+    if confirmation.strip() != nickname:
+        raise AuthError('delete_confirmation', 422)
+    await _erase_account(account_id)
+
+
+async def _erase_account(account_id, verified=None):
+    async with db._profile_write_lock:
+        async with db.Session() as session:
+            await _claim_lock(session)
+            account = await session.scalar(select(db.Account).where(db.Account.telegram_id == account_id).with_for_update())
+            credential = await session.scalar(select(db.Credential).where(db.Credential.account_id == account_id).with_for_update())
+            if not account: raise AuthError('authentication_required', 401)
+            if verified and (not credential or credential.id != verified.id or
+                             not hmac.compare_digest(credential.password_hash, verified.password_hash) or
+                             credential.nickname != verified.nickname):
+                raise AuthError('invalid_credentials', 401)
+            if credential:
+                await session.execute(delete(db.WebSession).where(db.WebSession.credential_id == credential.id))
+                await session.delete(credential)
+                await session.flush()
+            # Public listings survive; private drafts, proposals, reports and delivery data do not.
+            for model in (db.Saved, db.Subscription, db.Receipt, db.Submission, db.Report, db.User):
+                await session.execute(delete(model).where(model.telegram_id == account_id))
+            await session.execute(update(db.Event).where(db.Event.admin_updated_by == account_id).values(admin_updated_by=None))
+            await session.execute(update(db.Submission).where(db.Submission.reviewed_by == account_id).values(reviewed_by=None))
+            await session.execute(update(db.Report).where(db.Report.reviewed_by == account_id).values(reviewed_by=None))
+            await session.execute(update(db.AdminAudit).where(db.AdminAudit.actor_id == account_id).values(actor_id=0))
+            await session.delete(account)
+            await session.commit()
 
 
 async def attach_website_account(verified, telegram_id, telegram_locked=False):
