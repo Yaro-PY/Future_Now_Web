@@ -49,7 +49,7 @@ class Filters(Input):
 class Register(Input):
     nickname: str
     display_name: str
-    password: SecretStr = Field(min_length=12, max_length=128)
+    password: SecretStr = Field(min_length=8, max_length=128)
     language: Language = 'uk'
     _nickname = field_validator('nickname')(normalize_nickname)
     _name = field_validator('display_name')(normalize_name)
@@ -62,7 +62,7 @@ class Login(Input):
 
 class PasswordChange(Input):
     current_password: SecretStr = Field(min_length=1, max_length=128)
-    new_password: SecretStr = Field(min_length=12, max_length=128)
+    new_password: SecretStr = Field(min_length=8, max_length=128)
 
 
 class AccountDelete(Input):
@@ -196,6 +196,7 @@ class Subscription(Input):
 
 
 class UserOut(BaseModel):
+    avatar_url: str | None = None
     public_id: str | None
     nickname: str | None
     display_name: str | None
@@ -207,6 +208,29 @@ class UserOut(BaseModel):
     notifications: Notifications
     onboarding_required: bool
     filters_setup_required: bool
+
+
+class FactorChallenge(BaseModel):
+    two_factor_required: bool = True
+    challenge_token: str
+    methods: list[str]
+    expires_in: int
+    telegram_url: str | None = None
+
+
+class FactorAnswer(Input):
+    challenge_token: str = Field(min_length=43, max_length=43, pattern=r'^[A-Za-z0-9_-]{43}$')
+    method: Literal['totp', 'telegram', 'recovery', 'none']
+    code: SecretStr = Field(default=SecretStr(''), max_length=32)
+
+
+class FactorAuthorize(Input):
+    current_password: SecretStr = Field(min_length=1, max_length=128)
+
+
+class TotpConfirm(Input):
+    setup_token: str = Field(min_length=43, max_length=43, pattern=r'^[A-Za-z0-9_-]{43}$')
+    code: SecretStr = Field(min_length=6, max_length=6)
 
 
 class SessionOut(BaseModel):

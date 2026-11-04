@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
-from sqlalchemy import BigInteger, Boolean, DateTime, Integer, String, Text, JSON, ForeignKey, select, inspect, text, func, update, case
+from sqlalchemy import BigInteger, Boolean, DateTime, Integer, String, Text, JSON, LargeBinary, ForeignKey, select, inspect, text, func, update, case
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
@@ -132,6 +132,13 @@ class Account(Base):
     notifications: Mapped[dict] = mapped_column(JSON, default=lambda: {'new': False, 'deadlines': False, 'expired': True})
     notification_since: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     flow: Mapped[dict] = mapped_column(JSON, default=lambda: {'screen': 'language', 'revision': 0, 'history': []})
+    avatar_revision: Mapped[int] = mapped_column(Integer, default=0)
+
+class Avatar(Base):
+    __tablename__ = 'account_avatars'
+    account_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('accounts.telegram_id'), primary_key=True)
+    content: Mapped[bytes] = mapped_column(LargeBinary)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 class Credential(Base):
     """One shared bot/website login; the password itself is never stored."""
@@ -155,6 +162,33 @@ class AuthThrottle(Base):
     key: Mapped[str] = mapped_column(String(64), primary_key=True)
     window_start: Mapped[datetime] = mapped_column(DateTime)
     attempts: Mapped[int] = mapped_column(Integer, default=1)
+
+class TwoFactor(Base):
+    __tablename__ = 'two_factor'
+    credential_id: Mapped[str] = mapped_column(String(36), ForeignKey('credentials.id'), primary_key=True)
+    totp_secret: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    telegram_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    recovery_hashes: Mapped[list] = mapped_column(JSON, default=list)
+    last_totp_step: Mapped[int] = mapped_column(BigInteger, default=-1)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    pending_secret: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    pending_token_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    pending_session: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    pending_expires: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+class AuthChallenge(Base):
+    __tablename__ = 'auth_challenges'
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    credential_id: Mapped[str] = mapped_column(String(36), ForeignKey('credentials.id'), index=True)
+    binding_hash: Mapped[str] = mapped_column(String(64))
+    purpose: Mapped[str] = mapped_column(String(24))
+    credential_digest: Mapped[str] = mapped_column(String(64))
+    factor_revision: Mapped[int] = mapped_column(Integer)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, index=True)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    consumed: Mapped[bool] = mapped_column(Boolean, default=False)
+    telegram_code_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
 class Saved(Base):
     __tablename__ = 'saved_events'
@@ -236,6 +270,8 @@ class EventData:
 
 def _migrate(conn):
     """Additive, repeatable migration of the original events table."""
+    if 'avatar_revision' not in {c['name'] for c in inspect(conn).get_columns('accounts')}:
+        conn.execute(text('ALTER TABLE accounts ADD COLUMN avatar_revision INTEGER NOT NULL DEFAULT 0'))
     submission_columns = {c['name'] for c in inspect(conn).get_columns('submissions')}
     if 'revision' not in submission_columns:
         conn.execute(text('ALTER TABLE submissions ADD COLUMN revision INTEGER NOT NULL DEFAULT 1'))
@@ -506,7 +542,8 @@ async def database_ready(require_schema=False):
             for column in (Credential.id, WebSession.token_hash, AuthThrottle.key, Event.is_self_paced, Event.is_closed, Event.verified_at, CatalogSource.key,
                            Event.revision, Event.admin_overrides, Event.source_url, Event.admin_updated_at, Event.admin_updated_by,
                            Report.status, Report.review_note, Report.reviewed_by, Report.updated_at, Report.resolved_at, Report.revision, AdminAudit.id,
-                           Submission.revision, Submission.updated_at):
+                           Submission.revision, Submission.updated_at, Account.avatar_revision,
+                           Avatar.account_id, TwoFactor.credential_id, AuthChallenge.token_hash):
                 await session.execute(select(column).limit(1))
 
 

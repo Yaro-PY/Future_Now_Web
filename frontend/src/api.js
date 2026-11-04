@@ -8,11 +8,12 @@ export class FutureNowAPI {
 
   async request(path, { method = 'GET', body } = {}) {
     const headers = { 'Accept-Language': this.language };
-    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    const binary = typeof Blob !== 'undefined' && body instanceof Blob;
+    if (body !== undefined) headers['Content-Type'] = binary ? body.type : 'application/json';
     if (this.csrfToken && method !== 'GET') headers['X-CSRF-Token'] = this.csrfToken;
     const response = await fetch(this.baseURL + path, {
       method, headers, credentials: 'include',
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      ...(body === undefined ? {} : { body: binary ? body : JSON.stringify(body) }),
     });
     const data = response.status === 204 ? null : await response.json();
     if (!response.ok) {
@@ -31,6 +32,12 @@ export class FutureNowAPI {
   bootstrap(language = this.language) { return this.request('/bootstrap?lang=' + encodeURIComponent(language)); }
   register(values) { return this.request('/auth/register', { method: 'POST', body: values }); }
   login(nickname, password) { return this.request('/auth/login', { method: 'POST', body: { nickname, password } }); }
+  verifyTwoFactor(values) { return this.request('/auth/2fa/verify',{method:'POST',body:values}); }
+  cancelTwoFactor() { return this.request('/auth/2fa/cancel',{method:'POST'}); }
+  security() { return this.request('/me/security'); }
+  authorizeSecurity(current_password) { return this.request('/me/security/authorize',{method:'POST',body:{current_password}}); }
+  uploadAvatar(file) { return this.request('/me/avatar',{method:'PUT',body:file}); }
+  removeAvatar() { return this.request('/me/avatar',{method:'DELETE'}); }
   resume() { return this.request('/auth/session'); }
   me() { return this.request('/me'); }
   saveProfile(values) { return this.request('/me/profile', { method: 'PUT', body: values }); }

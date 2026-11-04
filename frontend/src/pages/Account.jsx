@@ -2,6 +2,8 @@ import {useState} from 'react';
 import {useApp, BOT_URL, initial} from '../context.jsx';
 import {Icon} from '../components/Icons.jsx';
 import {Criteria, DataForm, Field, LanguageSwitch, Password, Select, Submit} from '../components/Common.jsx';
+import {Avatar, ProfilePhoto} from '../components/ProfilePhoto.jsx';
+import {SecuritySettings} from './Security.jsx';
 import {AccountRail, PageHeading} from '../components/Layout.jsx';
 
 export function ProfilePage() {
@@ -15,7 +17,8 @@ export function ProfilePage() {
     setUser(next); setDraft(next.profile); applyFilters(next.filters); toast(t('savedNotice'));
   }
   return <main className="page content-page" id="main-content"><PageHeading title="profileTitle" subtitle="profileSubtitle" action={false} /><div className="content-layout"><AccountRail /><section>
-    <div className="profile-intro"><div className="avatar">{initial(user.display_name || '')}</div><div><h2>{user.display_name}</h2><p>@{user.nickname}</p><span className="account-status"><Icon name={user.telegram_linked ? 'check' : 'user'} />{t(user.telegram_linked ? 'sharedAccount' : 'websiteAccount')}</span></div></div>
+    <div className="profile-intro"><Avatar user={user}/><div><h2>{user.display_name}</h2><p>@{user.nickname}</p><span className="account-status"><Icon name={user.telegram_linked ? 'check' : 'user'} />{t(user.telegram_linked ? 'sharedAccount' : 'websiteAccount')}</span></div></div>
+    <ProfilePhoto />
     <DataForm kind="profile" onSubmit={save}><section className="form-section"><h2>{t('personalInfo')}</h2><div className="form-grid"><Field name="display_name" label={t('name')} value={user.display_name} required minLength={2} maxLength={80} autoComplete="name" /><Field name="nickname" label={t('nickname')} value={user.nickname} required minLength={3} maxLength={32} autoComplete="username" autoCapitalize="none" /></div></section>
       <section className="form-section"><h2>{t('preferences')}</h2><div className="form-grid"><Select name="age" label={t('age')} value={draft.age || ''} onChange={value => update('age',value)} excludeAny required /><Select name="country" label={t('country')} value={draft.country} onChange={value => update('country',value)} /><div data-city-field hidden={draft.country !== 'ukraine'}><Select name="city" label={t('city')} value={draft.city} onChange={value => update('city',value)} /></div><Select name="format" label={t('format')} value={draft.format} onChange={value => update('format',value)} /></div><div className="criteria-caption profile-criteria">{t('criteria')}</div><Criteria chips value={draft.criteria || []} onChange={value => update('criteria',value)} /></section>
       <div className="form-actions"><Submit>{t('save')}<Icon name="arrow" /></Submit></div>
@@ -32,7 +35,8 @@ export function SettingsPage() {
     <DataForm kind="password" className="form-section" onSubmit={async data => {
       if (data.get('new_password') !== data.get('confirmation')) throw new Error(t('mismatch'));
       await api.changePassword(String(data.get('current_password')),String(data.get('new_password'))); passwordChanged();
-    }}><h2>{t('security')}</h2><div className="stack"><Password name="current_password" label={t('currentPassword')} /><Password name="new_password" label={t('newPassword')} autoComplete="new-password" minLength={12} /><Password name="confirmation" label={t('confirmPassword')} autoComplete="new-password" minLength={12} /></div><div className="form-actions"><Submit kind="secondary">{t('changePassword')}</Submit></div></DataForm>
+    }}><h2>{t('security')}</h2><div className="stack"><Password name="current_password" label={t('currentPassword')} /><Password name="new_password" label={t('newPassword')} autoComplete="new-password" minLength={8} /><Password name="confirmation" label={t('confirmPassword')} autoComplete="new-password" minLength={8} /></div><div className="form-actions"><Submit kind="secondary">{t('changePassword')}</Submit></div></DataForm>
+    <SecuritySettings />
     <section className="form-section account-controls"><h2>{t('accountAccess')}</h2><p className="subtext">{t(user.telegram_linked ? 'recoveryLinked' : 'recoveryNeedsLink')}</p><div className="form-actions"><button type="button" className="button secondary" data-action="recover-access" onClick={() => setModal({type:'recover-access'})}>{t('recoverAccess')}</button>{!user.telegram_linked && <a className="button line" href={BOT_URL} target="_blank" rel="noopener noreferrer">{t('openBot')}<Icon name="external" /></a>}</div></section>
     <section className="form-section account-controls"><h2>{t('deleteAccount')}</h2><p className="subtext">{t('deleteAccountPreview')}</p><div className="form-actions"><button type="button" className="button danger" data-action="delete-account" onClick={() => setModal({type:'delete-account'})}>{t('deleteAccount')}</button></div></section>
   </section></div></main>;

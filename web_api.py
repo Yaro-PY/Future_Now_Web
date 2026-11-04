@@ -26,13 +26,15 @@ from catalog_status import catalog_status
 router = APIRouter(prefix='/api/v1', tags=['Website'])
 SESSION_COOKIE = 'fn_session'
 CSRF_COOKIE = 'fn_csrf'
+MFA_COOKIE = 'fn_mfa'
+MFA_COOKIE_PATH = '/api/v1/auth'
 COOKIE_PATH = '/api/v1'
 
 MESSAGES = {
     'authentication_required': ('Увійдіть у свій акаунт.', 'Sign in to your account.'),
     'invalid_credentials': ('Неправильний логін або пароль.', 'Incorrect login or password.'),
     'nickname_taken': ('Нік уже зайнятий. Якщо це ваш профіль у боті, задайте пароль через /password і увійдіть.', 'Nickname is taken. For your existing bot profile, set a password with /password and sign in.'),
-    'password_length': ('Пароль має містити 12–128 символів.', 'Use a password of 12–128 characters.'),
+    'password_length': ('Пароль має містити 8–128 символів.', 'Use a password of 8–128 characters.'),
     'too_many_attempts': ('Забагато спроб. Спробуйте через 15 хвилин.', 'Too many attempts. Try again in 15 minutes.'),
     'csrf_failed': ('Оновіть сесію та повторіть дію.', 'Refresh your session and try again.'),
     'origin_forbidden': ('Цей сайт не має доступу до API.', 'This website is not allowed to access the API.'),
@@ -101,14 +103,18 @@ def session_days():
     return max(1, min(30, int(os.getenv('WEB_SESSION_DAYS', '7'))))
 
 
-def set_cookies(response, request, raw, csrf):
+def cookie_settings(request):
     secure = os.getenv('WEB_COOKIE_SECURE', 'true' if os.getenv('VERCEL') == '1' or request.url.scheme == 'https' else 'false').lower() == 'true'
     same_site = os.getenv('WEB_COOKIE_SAMESITE', 'lax')
     if same_site not in ('lax', 'strict', 'none') or (same_site == 'none' and not secure):
         raise ValueError('Cross-site cookies require WEB_COOKIE_SECURE=true')
+    return {'httponly': True, 'secure': secure, 'samesite': same_site}
+
+
+def set_cookies(response, request, raw, csrf):
     for name, value in ((SESSION_COOKIE, raw), (CSRF_COOKIE, csrf)):
-        response.set_cookie(name, value, max_age=session_days() * 86400, httponly=True,
-                            secure=secure, samesite=same_site, path=COOKIE_PATH)
+        response.set_cookie(name, value, max_age=session_days() * 86400, path=COOKIE_PATH, **cookie_settings(request))
+    response.delete_cookie(MFA_COOKIE, path=MFA_COOKIE_PATH)
 
 
 def clear_cookies(response):
@@ -171,7 +177,7 @@ def user_out(account):
     # A completed Telegram profile already supplies usable search preferences.
     # New website registrations still complete their initial filter step.
     needs_filters = not bool(account.search_defaults) and not (account.telegram_id > 0 and profile_complete)
-    return schema.UserOut(public_id=profile.get('public_id'), nickname=profile.get('nickname'),
+    return schema.UserOut(avatar_url=f'/api/v1/me/avatar?v={account.avatar_revision}' if account.avatar_revision else None, public_id=profile.get('public_id'), nickname=profile.get('nickname'),
         display_name=profile.get('display_name'), language=account.language,
         role='admin' if db.admin_user(account.telegram_id) else 'user', telegram_linked=account.telegram_id > 0,
         profile=visible or None, filters=effective_filters(account),
@@ -180,8 +186,8 @@ def user_out(account):
         filters_setup_required=needs_filters)
 
 
-async def login_response(credential, request, response):
-    raw, csrf = await auth.issue_session(credential, session_days())
+async def login_response(credential, request, response, factor_proof=None):
+    raw, csrf = await auth.issue_session(credential, session_days(), factor_proof=factor_proof)
     set_cookies(response, request, raw, csrf)
     account = await db.get_account(credential.account_id)
     request.state.language = account.language
@@ -195,11 +201,19 @@ async def register(body: schema.Register, request: Request, response: Response):
     return await login_response(credential, request, response)
 
 
-@router.post('/auth/login', response_model=schema.SessionOut, tags=['Authentication'])
+@router.post('/auth/login', response_model=schema.SessionOut | schema.FactorChallenge, tags=['Authentication'])
 async def login(body: schema.Login, request: Request, response: Response):
     check_origin(request)
     await auth.reserve_attempt('login-ip:' + client_bucket(request), 60)
     credential = await auth.authenticate(body.nickname, body.password.get_secret_value(), client_bucket(request, body.nickname))
+    import secrets
+    import two_factor as mfa
+    binding = secrets.token_urlsafe(32)
+    challenge = await mfa.begin_login(credential, auth.token_hash(binding))
+    if challenge:
+        clear_cookies(response)
+        response.set_cookie(MFA_COOKIE, binding, max_age=mfa.TTL, path=MFA_COOKIE_PATH, **cookie_settings(request))
+        return schema.FactorChallenge(**challenge)
     return await login_response(credential, request, response)
 
 
@@ -257,7 +271,7 @@ async def bootstrap(lang: schema.Language = 'uk', user: Principal | None = Depen
             'fields': {key: label(FIELDS, key, language) for key in FIELDS},
             'profile_age_groups': [entry for entry in catalogs['age'] if entry['value'] != 'any'],
             'catalogs': catalogs, 'about': tr('about_text', language), 'help': tr('help_text', language),
-            'password_min_length': 12, 'password_max_length': 128, 'catalog': await catalog_status()}
+            'password_min_length': 8, 'password_max_length': 128, 'catalog': await catalog_status()}
 
 
 @router.get('/catalog/status', tags=['Catalog'])
@@ -486,6 +500,11 @@ async def decision(submission_id: int, body: schema.Decision, user: Principal = 
     if result != 'moderation_done': fail(result, 409)
     return proposal_out(await db.get_submission(submission_id))
 
+
+from security_api import install as install_security
+install_security(router, current_user=current_user, changing_user=changing_user,
+                 check_origin=check_origin, client_bucket=client_bucket, login_response=login_response,
+                 user_out=user_out, mfa_cookie=MFA_COOKIE, mfa_cookie_path=MFA_COOKIE_PATH)
 
 from admin_catalog import install as install_administration
 install_administration(router,current_user=current_user,changing_user=changing_user,require_admin=require_admin,fail=fail)

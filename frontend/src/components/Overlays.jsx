@@ -4,6 +4,7 @@ import {Icon} from './Icons.jsx';
 import {AsyncButton, Button, Close, Criteria, DataForm, Dialog, Field, Select, Skeletons, Submit} from './Common.jsx';
 import {FavoriteButton, FilterForm, Price} from '../pages/Catalog.jsx';
 import {ProposalForm} from '../pages/Proposals.jsx';
+import {SecurityWizard} from '../pages/Security.jsx';
 import {AccountActions} from '../pages/AccountActions.jsx';
 import {PublishedEditor, ReportReview} from '../pages/Administration.jsx';
 
@@ -78,6 +79,7 @@ export function ModalContent() {
     await api.request(`/admin/proposals/${modal.item.id}/decision`,{method:'POST',body:{decision,reason,expected_revision:modal.item.revision}});
     close(); toast(t('decisionSaved')); reload();
   }
+  if (modal.type === 'security-wizard') return <SecurityWizard />;
   if (modal.type === 'onboarding') return <Onboarding />;
   if (modal.type === 'edit-published') return <Dialog title={t('editListing')} className="modal wide-modal" onClose={close}><PublishedEditor item={modal.item}/></Dialog>;
   if (modal.type === 'review-report') return <Dialog title={t('processReport')} onClose={close}><ReportReview item={modal.item}/></Dialog>;

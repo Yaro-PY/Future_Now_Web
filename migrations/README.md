@@ -14,3 +14,8 @@ References: [PostgreSQL DO](https://www.postgresql.org/docs/current/sql-do.html)
 ## User controls update
 
 After the base schema, run `002_user_controls.sql` before deploying the user-controls release of both apps. It adds submissions.revision and submissions.updated_at in one atomic, repeatable DO statement and retains existing rows. Do not create a separate database or branch. See [USER_CONTROLS.md](../USER_CONTROLS.md).
+
+
+## Profile photo and MFA
+
+Run `003_profile_security.sql` after 001/002, then set the same secret `AUTH_ENCRYPTION_KEY` on both production projects before enabling MFA. Existing accounts start with MFA disabled. See [SECURITY_PROFILE.md](../SECURITY_PROFILE.md).

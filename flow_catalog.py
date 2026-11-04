@@ -210,9 +210,9 @@ TEXT.update(pairs(
     ('password', 'Пароль для сайту', 'Website password'),
     ('site_login', 'Логін для сайту', 'Website login'),
     ('login_existing', 'Уже є акаунт — увійти', 'Already registered — sign in'),
-    ('password_entry_prompt', 'Створіть пароль для входу на сайт: 12–128 символів. Не використовуйте пароль від Telegram чи інших сервісів. Надішліть його повідомленням; бот спробує видалити це повідомлення.', 'Create a website password of 12–128 characters. Do not reuse your Telegram or other passwords. Send it as a message; the bot will try to delete that message.'),
+    ('password_entry_prompt', 'Створіть пароль для входу на сайт: 8–128 символів. Не використовуйте пароль від Telegram чи інших сервісів. Надішліть його повідомленням; бот спробує видалити це повідомлення.', 'Create a website password of 8–128 characters. Do not reuse your Telegram or other passwords. Send it as a message; the bot will try to delete that message.'),
     ('password_confirm_prompt', 'Повторіть новий пароль. Він відкриватиме на сайті цей самий профіль, фільтри й обране.', 'Repeat the new password. It will open the same profile, filters and favorites on the website.'),
-    ('password_length', 'Пароль має містити 12–128 символів.', 'Use a password of 12–128 characters.'),
+    ('password_length', 'Пароль має містити 8–128 символів.', 'Use a password of 8–128 characters.'),
     ('password_mismatch', 'Паролі не збігаються. Повторіть пароль або скасуйте дію.', 'Passwords do not match. Repeat the password or cancel.'),
     ('password_saved', 'Пароль збережено. Входьте на сайт за цим ніком і паролем. Попередні сесії сайту завершено.', 'Password saved. Use this nickname and password on the website. Previous website sessions have been signed out.'),
     ('login_nickname_prompt', 'Введіть нік вашого акаунта Future Now.', 'Enter your Future Now nickname.'),
@@ -225,4 +225,22 @@ TEXT.update(pairs(
     ('too_many_attempts', 'Забагато спроб. Спробуйте через 15 хвилин.', 'Too many attempts. Try again in 15 minutes.'),
     ('invalid_request', 'Перевірте введені дані.', 'Check the submitted fields.'),
     ('nickname_taken', 'Цей нік уже зайнятий. Якщо це ваш акаунт сайту, скористайтеся /login.', 'This nickname is taken. For your existing website account, use /login.')
+))
+
+TEXT.update(pairs(
+    ('two_factor_required', 'Потрібне підтвердження другим фактором.', 'Second-factor verification is required.'),
+    ('two_factor_unavailable', 'Двофакторна перевірка тимчасово недоступна. Спробуйте пізніше.', 'Two-factor verification is temporarily unavailable. Try again later.'),
+    ('invalid_two_factor_code', 'Неправильний код. Перевірте його й спробуйте ще раз.', 'Incorrect code. Check it and try again.'),
+    ('two_factor_code_used', 'Цей код уже використано. Дочекайтеся нового коду в застосунку.', 'This code has already been used. Wait for a new code in your app.'),
+    ('challenge_expired', 'Час перевірки минув або запит уже використано. Почніть дію знову.', 'This verification has expired or was already used. Start again.'),
+    ('two_factor_cooldown', 'Код уже надіслано. Для нового коду зачекайте хвилину.', 'A code has already been sent. Wait a minute before requesting another.'),
+    ('two_factor_already_enabled', 'Цей спосіб 2FA вже увімкнено.', 'This 2FA method is already enabled.'),
+    ('telegram_link_required', 'Спочатку прив’яжіть Telegram через /login у боті.', 'Link Telegram first using /login in the bot.'),
+    ('login_factor_prompt', 'Для прив’язки акаунта введіть код Google Authenticator або один резервний код. Пароля недостатньо.', 'To link your account, enter an authenticator code or one recovery code. Your password alone is not enough.'),
+    ('two_factor_login', 'Код для входу на сайт Future Now', 'Code to sign in to the Future Now website'),
+    ('two_factor_settings', 'Код для зміни захисту акаунта Future Now', 'Code to change your Future Now account security'),
+    ('two_factor_code_notice', 'Введіть код лише на сайті Future Now. Запит діє до 5 хвилин. Нікому не повідомляйте цей код. Якщо ви не починали дію, не використовуйте його.', 'Enter this code only on the Future Now website. The request lasts up to 5 minutes. Do not share this code. If you did not start this action, do not use it.'),
+    ('avatar_invalid', 'Оберіть звичайне зображення JPEG, PNG або WebP до 16 мегапікселів.', 'Choose a still JPEG, PNG or WebP image up to 16 megapixels.'),
+    ('avatar_size', 'Розмір фото має бути не більшим за 2 МБ.', 'Your photo must be no larger than 2 MB.'),
+    ('invalid_current_password', 'Неправильний поточний пароль.', 'Incorrect current password.')
 ))

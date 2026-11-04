@@ -1,5 +1,6 @@
 import {useEffect, useRef, useState} from 'react';
 import {useApp, initial} from '../context.jsx';
+import {Avatar} from './ProfilePhoto.jsx';
 import {Icon, Logo} from './Icons.jsx';
 import {AsyncButton, Button, LanguageSwitch} from './Common.jsx';
 
@@ -23,7 +24,7 @@ export function Header() {
   return <header className={`app-header ${scrolled ? 'is-scrolled' : ''}`}><a href="#explore" className="brand" aria-label="Future Now" onClick={event => { event.preventDefault(); go('explore'); }}><Logo /></a>
     <nav className="main-nav" aria-label={t('explore')}><NavLink page="explore" /><NavLink page="categories" /><NavLink page="saved" /><NavLink page="proposals" /></nav>
     <div className="header-actions"><LanguageSwitch /><span className="separator" /><button type="button" className="icon-button" data-action="settings" aria-label={t('settings')} onClick={() => go('settings')}><Icon name="settings" /></button>
-      <div className="header-profile-wrap" ref={profileRef}><button type="button" className="header-profile" data-action="profile-menu" aria-label={t('profile')} aria-expanded={menuOpen} onClick={() => setMenuOpen(value => !value)}><span className="avatar">{initial(user.display_name || '')}</span><span>{user.display_name?.split(' ')[0] || user.nickname}</span><Icon name="down" /></button>
+      <div className="header-profile-wrap" ref={profileRef}><button type="button" className="header-profile" data-action="profile-menu" aria-label={t('profile')} aria-expanded={menuOpen} onClick={() => setMenuOpen(value => !value)}><Avatar user={user}/><span>{user.display_name?.split(' ')[0] || user.nickname}</span><Icon name="down" /></button>
         {menuOpen && <nav className="profile-menu"><NavLink page="profile" symbol="user" /><NavLink page="categories" symbol="grid" /><NavLink page="settings" symbol="settings" /><NavLink page="suggest" symbol="plus" /><NavLink page="help" symbol="help" /><NavLink page="about" symbol="spark" />{user.role === 'admin' && <NavLink page="moderation" symbol="shield" />}<AsyncButton data-action="logout" onClick={logout}><Icon name="logout" />{t('logout')}</AsyncButton></nav>}
       </div>
     </div>

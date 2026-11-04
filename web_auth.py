@@ -30,11 +30,11 @@ class AuthError(Exception):
 
 
 def token_hash(value):
-    return hashlib.sha256(value.encode()).hexdigest()
+    return hashlib.sha256(value.encode('utf-8', 'surrogatepass')).hexdigest()
 
 
 def valid_password(value):
-    if not isinstance(value, str) or not 12 <= len(value) <= 128:
+    if not isinstance(value, str) or not 8 <= len(value) <= 128:
         raise AuthError('password_length', 422)
     try: value.encode('utf-8')
     except UnicodeError: raise AuthError('invalid_request', 422) from None
@@ -104,6 +104,8 @@ async def set_bot_password_hash(account_id, encoded):
                 credential.nickname = nickname
                 credential.password_hash = encoded
                 await session.execute(delete(db.WebSession).where(db.WebSession.credential_id == credential.id))
+                from two_factor import invalidate_pending
+                await invalidate_pending(session, credential.id)
             else:
                 session.add(db.Credential(account_id=account_id, nickname=nickname, password_hash=encoded))
             await session.commit()
@@ -154,12 +156,14 @@ async def register(nickname, display_name, password, language, bucket):
             return credential
 
 
-async def issue_session(verified, days=7):
+async def issue_session(verified, days=7, factor_proof=None):
     raw, csrf = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
     async with db.Session() as session:
         credential = await session.scalar(select(db.Credential).where(db.Credential.id == verified.id).with_for_update())
         if not credential or not hmac.compare_digest(credential.password_hash, verified.password_hash):
             raise AuthError('invalid_credentials', 401)
+        from two_factor import require_factor
+        await require_factor(session, credential, factor_proof)
         now = db.utcnow()
         await session.execute(delete(db.WebSession).where(db.WebSession.expires_at <= now))
         await session.execute(delete(db.AuthThrottle).where(db.AuthThrottle.window_start < now - timedelta(days=1)))
@@ -198,6 +202,8 @@ async def change_password(credential_id, old_password, new_password):
             raise AuthError('invalid_credentials', 401)
         current.password_hash = encoded
         await session.execute(delete(db.WebSession).where(db.WebSession.credential_id == credential_id))
+        from two_factor import invalidate_pending
+        await invalidate_pending(session, credential_id)
         await session.commit()
 
 
@@ -236,10 +242,13 @@ async def _erase_account(account_id, verified=None):
                              credential.nickname != verified.nickname):
                 raise AuthError('invalid_credentials', 401)
             if credential:
+                await session.execute(delete(db.AuthChallenge).where(db.AuthChallenge.credential_id == credential.id))
+                await session.execute(delete(db.TwoFactor).where(db.TwoFactor.credential_id == credential.id))
                 await session.execute(delete(db.WebSession).where(db.WebSession.credential_id == credential.id))
                 await session.delete(credential)
                 await session.flush()
             # Public listings survive; private drafts, proposals, reports and delivery data do not.
+            await session.execute(delete(db.Avatar).where(db.Avatar.account_id == account_id))
             for model in (db.Saved, db.Subscription, db.Receipt, db.Submission, db.Report, db.User):
                 await session.execute(delete(model).where(model.telegram_id == account_id))
             await session.execute(update(db.Event).where(db.Event.admin_updated_by == account_id).values(admin_updated_by=None))
@@ -250,7 +259,7 @@ async def _erase_account(account_id, verified=None):
             await session.commit()
 
 
-async def attach_website_account(verified, telegram_id, telegram_locked=False):
+async def attach_website_account(verified, telegram_id, telegram_locked=False, factor_proof=None):
     """Link a website-first login to its first Telegram account without changing web sessions."""
     if verified.account_id == telegram_id: return await db.get_account(telegram_id)
     if verified.account_id > 0:
@@ -266,6 +275,8 @@ async def attach_website_account(verified, telegram_id, telegram_locked=False):
                 credential = await session.scalar(select(db.Credential).where(db.Credential.id == verified.id).with_for_update())
                 if not credential or credential.password_hash != verified.password_hash:
                     raise AuthError('invalid_credentials', 401)
+                from two_factor import require_factor
+                await require_factor(session, credential, factor_proof)
                 if credential.account_id != verified.account_id:
                     raise AuthError('telegram_already_linked', 409)
                 target_login = await session.scalar(select(db.Credential.id).where(db.Credential.account_id == telegram_id))
@@ -276,6 +287,13 @@ async def attach_website_account(verified, telegram_id, telegram_locked=False):
                 for field in ('profile', 'language', 'search_defaults', 'notifications', 'notification_since'):
                     setattr(target, field, deepcopy(getattr(source, field)))
                 target.flow = {'screen': 'menu', 'revision': target.flow.get('revision', 0), 'history': []}
+                avatar = await session.get(db.Avatar, source.telegram_id)
+                if avatar:
+                    stmt = db.insert_for(db.Avatar).values(account_id=telegram_id, content=avatar.content, updated_at=avatar.updated_at)
+                    await session.execute(stmt.on_conflict_do_update(index_elements=['account_id'], set_={
+                        'content': avatar.content, 'updated_at': avatar.updated_at}))
+                    target.avatar_revision = max(source.avatar_revision, target.avatar_revision) + 1
+                    await session.execute(delete(db.Avatar).where(db.Avatar.account_id == source.telegram_id))
                 for model in (db.Saved, db.Subscription):
                     rows = list((await session.scalars(select(model).where(model.telegram_id == source.telegram_id))).all())
                     for row in rows:

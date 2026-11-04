@@ -89,9 +89,9 @@ class APITests(unittest.IsolatedAsyncioTestCase):
         response = await self.client.post('/api/v1/auth/login', json={'nickname': 'unknown_user', 'password': PASSWORD})
         self.assertEqual(response.status_code, 401)
         self.assertNotIn(PASSWORD, response.text)
-        response = await self.client.post('/api/v1/auth/register', json={'nickname': 'another', 'display_name': 'Name', 'password': 'short123'})
+        response = await self.client.post('/api/v1/auth/register', json={'nickname': 'another', 'display_name': 'Name', 'password': 'short12'})
         self.assertEqual(response.status_code, 422)
-        self.assertNotIn('short123', response.text)
+        self.assertNotIn('short12', response.text)
 
     async def test_bot_credential_contract_and_password_revocation(self):
         await db.get_account(ADMIN)

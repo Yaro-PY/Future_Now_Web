@@ -9,3 +9,7 @@ beautifulsoup4>=4.12,<5
 python-dotenv>=1.1,<2
 tzdata>=2025.2
 pwdlib[argon2]>=0.3,<1
+pyotp>=2.9,<3
+cryptography>=46,<51
+Pillow>=12.2,<14
+qrcode>=8.2,<9
