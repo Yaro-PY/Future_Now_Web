@@ -20,8 +20,8 @@ TOPICS = pairs(
     ('sport', 'Спорт', 'Sport'), ('culture', 'Культура', 'Culture'),
     ('international', 'Міжнародні відносини', 'International relations'),
     ('other', 'Інше', 'Other'))
-AGES = pairs(('13-16', '13–16', '13–16'), ('16-18', '16–18', '16–18'),
-             ('18+', '18 і більше', '18 and over'), ('any', 'Будь-який', 'Any age'))
+AGES = pairs(('12-14', '12–14', '12–14'), ('14-17', '14–17', '14–17'),
+             ('18+', '18+', '18+'), ('any', 'Будь-який', 'Any age'))
 COUNTRIES = pairs(('ukraine', 'Україна', 'Ukraine'), ('europe', 'Європа', 'Europe'),
                   ('other', 'Інші країни', 'Other countries'),
                   ('international', 'Міжнародна', 'International'),
@@ -66,8 +66,8 @@ TEXT = pairs(
     ('filters', 'Змінити фільтри', 'Change filters'), ('new_search', 'Новий пошук', 'New search'),
     ('search_go', 'Пошук', 'Search'), ('all_topics', 'Усі тематики', 'All topics'),
     ('no_criteria', 'Не має значення', 'No preferences'),
-    ('pick', 'Оберіть:', 'Choose:'), ('age_prompt', 'Вкажіть свій вік (10–100) кнопкою або повідомленням:', 'Choose your age (10–100) or type it:'),
-    ('invalid_age', 'Введіть ціле число від 10 до 100.', 'Enter a whole number from 10 to 100.'),
+    ('pick', 'Оберіть:', 'Choose:'), ('age_prompt', 'Вкажіть свій вік (12–100) кнопкою або повідомленням:', 'Choose your age (12–100) or type it:'),
+    ('invalid_age', 'Введіть ціле число від 12 до 100.', 'Enter a whole number from 12 to 100.'),
     ('review', 'Перевірте профіль і збережіть.', 'Review and save your profile.'),
     ('profile_saved', 'Зміни збережено', 'Changes saved'),
     ('no_profile', 'Спочатку створіть профіль.', 'Create your profile first.'),
@@ -201,8 +201,8 @@ TEXT.update(pairs(
     ('nickname_invalid', 'Нік має містити 3–32 латинські літери, цифри або _ та починатися з літери.', 'Use 3–32 Latin letters, digits or _ and start with a letter.'),
     ('nickname_taken', 'Цей нік уже зайнятий. Оберіть інший.', 'This nickname is already taken. Choose another.'),
     ('name_invalid', 'Введіть імʼя довжиною 2–80 символів без керувальних символів.', 'Enter a name of 2–80 characters without control characters.'),
-    ('age_prompt', 'Оберіть свою вікову групу: 13–16, 16–18 або 18 і більше. Можна також написати свій вік (13–100).', 'Choose your age group: 13–16, 16–18, or 18 and over. You can also type your age (13–100).'),
-    ('invalid_age', 'Оберіть вікову групу або введіть ціле число від 13 до 100.', 'Choose an age group or enter a whole number from 13 to 100.')
+    ('age_prompt', 'Оберіть свою вікову групу: 12–14, 14–17 або 18+. Можна також написати свій вік (12–100).', 'Choose your age group: 12–14, 14–17, or 18+. You can also type your age (12–100).'),
+    ('invalid_age', 'Оберіть вікову групу або введіть ціле число від 12 до 100.', 'Choose an age group or enter a whole number from 12 to 100.')
 ))
 
 TEXT.update(pairs(

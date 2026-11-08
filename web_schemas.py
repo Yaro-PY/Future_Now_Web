@@ -5,12 +5,12 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
 
 from flow_catalog import TYPES, COUNTRIES, CITIES, FORMATS, DATES, CRITERIA
-from identity import normalize_name, normalize_nickname
+from identity import age_group, normalize_name, normalize_nickname
 from import_events import Opportunity
 from proposals import canonical_url
 
 Language = Literal['uk', 'en']
-Age = Literal['any', '13-16', '16-18', '18+']
+Age = Literal['any', '12-14', '14-17', '18+']
 
 
 class Input(BaseModel):
@@ -25,6 +25,11 @@ class Filters(Input):
     format: str = 'any'
     date: str = 'any'
     criteria: list[str] = Field(default_factory=list, max_length=4)
+
+    @field_validator('age', mode='before')
+    @classmethod
+    def normalize_age(cls, value):
+        return value if value == 'any' else age_group(value)
 
     @field_validator('type', 'country', 'city', 'format', 'date')
     @classmethod
@@ -73,13 +78,14 @@ class AccountDelete(Input):
 class Profile(Input):
     nickname: str
     display_name: str
-    age: Literal['13-16', '16-18', '18+']
+    age: Literal['12-14', '14-17', '18+']
     country: str = 'any'
     city: str = 'any'
     format: str = 'any'
     criteria: list[str] = Field(default_factory=list, max_length=4)
     _nickname = field_validator('nickname')(normalize_nickname)
     _name = field_validator('display_name')(normalize_name)
+    _age = field_validator('age', mode='before')(age_group)
 
     @field_validator('country', 'city', 'format')
     @classmethod

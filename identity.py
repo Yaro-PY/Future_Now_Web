@@ -2,7 +2,9 @@
 import re
 import unicodedata
 
-AGE_GROUPS = ('13-16', '16-18', '18+')
+AGE_GROUPS = ('12-14', '14-17', '18+')
+LEGACY_AGE_GROUPS = {'13-14': '12-14', '15-17': '14-17',
+                     '13-16': '12-14', '16-18': '14-17'}
 
 def normalize_nickname(value):
     if not isinstance(value, str): raise ValueError('nickname_invalid')
@@ -23,12 +25,11 @@ def normalize_name(value):
 def age_group(value):
     """Map manually entered/legacy ages to the three new profile choices."""
     value = str(value).replace('–', '-').strip()
+    value = LEGACY_AGE_GROUPS.get(value, value)
     if value in AGE_GROUPS: return value
-    if value == '13-14': return '13-16'
-    if value == '15-17': return '16-18'
-    if not value.isdecimal() or not 13 <= int(value) <= 100:
+    if not value.isdecimal() or not 12 <= int(value) <= 100:
         raise ValueError('invalid_age')
-    return '13-16' if int(value) < 16 else '16-18' if int(value) < 18 else '18+'
+    return '12-14' if int(value) < 14 else '14-17' if int(value) < 18 else '18+'
 
 def identity_complete(profile):
     if not profile: return False

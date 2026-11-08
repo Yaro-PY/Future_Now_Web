@@ -409,6 +409,7 @@ def event_status(event, now=None):
     return 'open' if event.deadline or event.start_at else 'check_source'
 
 def matches(event, prefs, now=None):
+    from identity import LEGACY_AGE_GROUPS
     now = now or localnow()
     if event_status(event, now) == 'expired': return False
     kind = LEGACY_TYPES.get(event.event_type, event.event_type)
@@ -420,6 +421,7 @@ def matches(event, prefs, now=None):
             if event.country not in ('international', 'europe', 'other') and kind != requested: return False
         elif kind != requested: return False
     age = prefs.get('age', 'any')
+    age = LEGACY_AGE_GROUPS.get(str(age), age)
     if str(age) != 'any':
         if str(age) == '18+': low, high = 18, 100
         elif '-' in str(age): low, high = map(int, str(age).split('-'))
