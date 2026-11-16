@@ -31,7 +31,6 @@ export function SpiderAssistant({onClose,onBack}) {
   return <Dialog id="spider-assistant" className="modal spider-assistant" title={uk?'ШІ по сайту':'Site AI assistant'} onClose={onClose}>
     <div className="modal-body" data-spider-ui>
       <div className="spider-assistant-status"><span>{uk?'Тестова панель':'Preview panel'}</span><Button kind="line" action="spider-back" onClick={onBack}><Icon name="arrow"/>{uk?'Меню павука':'Spider menu'}</Button></div>
-      <p className="spider-assistant-notice">{uk?'Зараз тут локальні підказки з довідки Future Now. Зовнішню ШІ-модель ще не підключено.':'This preview uses local tips from the Future Now help pages. An external AI model is not connected yet.'}</p>
       <div className="spider-messages" ref={list} role="log" aria-live="polite" aria-label={uk?'Розмова з помічником':'Assistant conversation'}>
         {!messages.length&&<div className="spider-message assistant"><Icon name="spark"/><p>{uk?'Що підказати про сайт?':'What would you like to know about the site?'}</p></div>}
         {messages.map((message,index)=><div key={index} className={`spider-message ${message.role}`}><p>{message.text}</p>{message.route&&<Button kind="line" action="spider-go" onClick={()=>{onClose();go(message.route);}}>{uk?'Відкрити розділ':'Open section'}<Icon name="arrow"/></Button>}</div>)}
