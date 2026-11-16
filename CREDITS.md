@@ -11,3 +11,6 @@ Pexels license: https://www.pexels.com/license/
 NASA media guidance: https://www.nasa.gov/nasa-brand-center/images-and-media/
 
 Catalogue photographs are editorial illustrations of opportunity categories, not photographs supplied by individual organizers. No external fonts, image CDNs or analytics are requested by the running frontend. Opportunity text and eligibility come from the API.
+
+
+- ElectronicSpider: animation source supplied by the project owner. Its inverse-kinematics tentacles were adapted for React, responsive rendering, session controls and non-blocking page interaction.

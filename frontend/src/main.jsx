@@ -4,6 +4,7 @@ import App from './App.jsx';
 import './styles.css';
 import './sections.css';
 import './responsive.css';
+import './liquid-glass.css';
 
 class ErrorBoundary extends React.Component {
   state = {failed: false};
