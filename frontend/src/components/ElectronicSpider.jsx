@@ -5,6 +5,7 @@ import {isFreeBackground,isSpiderPixel} from '../effects/spiderInteraction.js';
 import {Button,Dialog} from './Common.jsx';
 import {Icon} from './Icons.jsx';
 import {SpiderAssistant} from './SpiderAssistant.jsx';
+import {useSiteAssistant} from '../hooks/useSiteAssistant.js';
 import './electronic-spider.css';
 
 const sessionKey='future-now.spider.hidden';
@@ -14,6 +15,7 @@ function hiddenThisSession() {
 
 export function ElectronicSpider() {
   const {language,modal,detailId,menuOpen}=useApp();
+  const assistant=useSiteAssistant();
   const canvas=useRef(null);
   const engine=useRef(null);
   const panelRef=useRef(null);
@@ -66,12 +68,12 @@ export function ElectronicSpider() {
       <div className="modal-body" data-spider-ui>
         <p>{uk?'Обери, що зробити.':'Choose an action.'}</p>
         <div className="spider-actions">
-          <Button kind="secondary" action="spider-assistant" onClick={()=>setPanel('assistant')}><Icon name="spark"/><span>{uk?'Відкрити ШІ по сайту':'Open the site AI assistant'}</span><Icon name="arrow"/></Button>
+          <Button kind="secondary" action="spider-assistant" onClick={()=>setPanel('assistant')}><Icon name="spark"/><span>{uk?'Помічник по сайту':'Site assistant'}</span><Icon name="arrow"/></Button>
           <Button kind="line" action="spider-hide" onClick={hide}><Icon name="close"/>{uk?'Приховати на цю сесію':'Hide for this session'}</Button>
         </div>
         <p className="spider-session-note">{uk?'Приховування діє в цій вкладці, зокрема після оновлення сторінки.':'Stays hidden in this tab, including after a page refresh.'}</p>
       </div>
     </Dialog>}
-    {panel==='assistant'&&<SpiderAssistant onClose={()=>setPanel(null)} onBack={()=>setPanel('menu')}/>}
+    {panel==='assistant'&&<SpiderAssistant onClose={()=>setPanel(null)} onBack={()=>setPanel('menu')} assistant={assistant}/>}
   </>;
 }

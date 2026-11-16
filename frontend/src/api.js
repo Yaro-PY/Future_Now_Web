@@ -45,6 +45,7 @@ export class FutureNowAPI {
   saveFilters(values) { return this.request('/me/filters', { method: 'PUT', body: values }); }
   saveSettings(values) { return this.request('/me/settings', { method: 'PATCH', body: values }); }
   search(values = {}) { return this.request('/opportunities/search', { method: 'POST', body: values }); }
+  assistant(message, context = null) { return this.request('/assistant/message', {method:'POST',body:{message,context}}); }
   detail(id) { return this.request('/opportunities/' + encodeURIComponent(id)); }
   catalogStatus() { return this.request('/catalog/status'); }
   registration(id) { return this.request('/opportunities/' + encodeURIComponent(id) + '/registration'); }

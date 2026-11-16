@@ -43,3 +43,35 @@
   .spider-assistant .modal-body { padding: 16px 20px 22px; }
   .spider-assistant .modal-head h2 { font-size: 20px; }
 }
+
+/* Conversation and real catalogue results; other page layouts stay unchanged. */
+dialog.spider-assistant { width: min(620px, calc(100vw - 32px)); height: min(740px, calc(100dvh - 28px)); max-height: calc(100dvh - 28px); }
+dialog.spider-assistant[open] { display: flex; flex-direction: column; }
+.spider-assistant .modal-head { flex: 0 0 auto; }
+.spider-assistant .modal-body { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 12px; overflow: hidden; }
+.spider-assistant .spider-assistant-status { flex: 0 0 auto; flex-wrap: wrap; margin: 0; }
+.assistant-toolbar { display: flex; gap: 10px; align-items: center; }
+.assistant-toolbar [data-action="assistant-clear"] { width: 28px; min-width: 28px; justify-content: center; }
+.spider-assistant-status .assistant-toolbar [data-action="assistant-clear"] .icon { transform: none; }
+.spider-assistant .spider-messages { flex: 1; min-height: 80px; max-height: none; padding: 3px 4px 10px; scroll-behavior: smooth; }
+.spider-assistant .spider-message { flex: 0 0 auto; overflow-wrap: anywhere; }
+.spider-assistant .spider-message.assistant { width: 100%; max-width: 100%; }
+dialog.spider-assistant .spider-message p { color: #4d576a; font-size: 12px; line-height: 1.75; white-space: pre-line; }
+.assistant-labels { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.assistant-labels span { padding: 4px 7px; border-radius: 6px; color: #536899; background: #e8edf8; font-size: 9px; }
+.assistant-results { display: grid; gap: 8px; margin-top: 12px; }
+.assistant-course { width: 100%; display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px solid #e0e6ef; border-radius: 12px; background: #fff; text-align: left; }
+.assistant-course:hover { border-color: #a9bdf8; background: #fcfdff; }
+.assistant-course-title { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; font-weight: 600; color: #263347; line-height: 1.5; }
+.assistant-course-title .icon { width: 16px; height: 16px; min-width: 16px; color: #4268f6; }
+.assistant-course-meta { font-size: 10px; color: #4f648b; line-height: 1.5; }
+.assistant-course-source { font-size: 9px; color: #7b8797; line-height: 1.5; }
+.assistant-pending { display: flex; align-items: center; gap: 8px; font-size: 10px; color: #79869a; padding: 8px 4px; }
+.assistant-pending .icon { width: 14px; height: 14px; animation: spin 1.2s linear infinite; }
+.spider-assistant .spider-suggestions { flex: 0 0 auto; max-height: 76px; overflow-y: auto; margin: 0; }
+.spider-assistant .spider-question { flex: 0 0 auto; }
+.spider-message.failed { border: 1px solid #eadce0; }
+@media (prefers-reduced-motion: reduce) {
+  .assistant-pending .icon { animation: none; }
+  .spider-assistant .spider-messages { scroll-behavior: auto; }
+}

@@ -501,6 +501,11 @@ async def decision(submission_id: int, body: schema.Decision, user: Principal = 
     return proposal_out(await db.get_submission(submission_id))
 
 
+from assistant_api import install as install_assistant
+install_assistant(router,changing_user=changing_user,effective_filters=effective_filters,
+                  event_out=event_out,event_flags=event_flags,fail=fail)
+
+
 from security_api import install as install_security
 install_security(router, current_user=current_user, changing_user=changing_user,
                  check_origin=check_origin, client_bucket=client_bucket, login_response=login_response,

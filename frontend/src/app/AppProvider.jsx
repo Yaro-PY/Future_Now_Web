@@ -157,6 +157,7 @@ export function AppProvider({children}) {
     resourceRevision:revision,
     api, user, setUser, config, booting, notification, language, t, date, options:(name, excludeAny = false) => (config?.catalogs?.[name] || []).filter(row => !excludeAny || row.value !== 'any'),
     route, go, filters, applyFilters, resetFilters, query, setQuery, submitQuery:() => { setSearchQuery(query.trim()); setPage(1); setRevision(value => value + 1); },
+    openAssistantCatalog:values=>{setQuery('');setSearchQuery('');applyFilters(values);go('explore');},
     page, setPage, collection, collectionError, proposalPage, proposalError, savedCount, menuOpen, setMenuOpen,
     modal, setModal, detailId, setDetailId, toast, fail, errorMessage, enter, changeLanguage, toggleFavorite, refreshCatalog,
     reload:() => setRevision(value => value + 1), logout:async () => { await api.logout(); clearSession(); },
