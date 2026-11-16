@@ -31,6 +31,6 @@ export function AuthPage() {
           {registering && <Password name="confirmation" label={t('confirmPassword')} autoComplete="new-password" minLength={8} />}{registering && <p className="subtext">{t('passwordHint')}</p>}
           <Submit wide>{t(registering ? 'register' : 'continue')}<Icon name="arrow" /></Submit>
         </DataForm>}{!registering && !pending && <button type="button" className="text-button recovery-link" data-action="recover-access" onClick={() => setModal({type:'recover-access'})}>{t('forgotPassword')}</button>}<div className="auth-bot-note">{t('botLoginHint')}<br /><button type="button" data-action="bot-help" onClick={() => setModal({type:'bot-help'})}>{t('howItWorks')} <Icon name="external" /></button></div>
-      </section></main><footer className="auth-footer"><span>{t('authFooter')}</span><span className="coordinates">MADE FOR WHAT’S NEXT</span></footer>
+      </section></main><footer className="auth-footer"><span>{t('authFooter')}</span></footer>
   </div>;
 }
