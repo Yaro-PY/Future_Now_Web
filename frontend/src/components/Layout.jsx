@@ -1,18 +1,19 @@
 import {useEffect, useRef, useState} from 'react';
 import {useApp, initial} from '../context.jsx';
 import {Avatar} from './ProfilePhoto.jsx';
+import {routeHref,internalClick} from '../routing/routes.js';
 import {Icon, Logo} from './Icons.jsx';
 import {AsyncButton, Button, LanguageSwitch} from './Common.jsx';
 
 export function NavLink({page, title = page, symbol}) {
   const {route, go, t, savedCount} = useApp();
   const active = route === page;
-  return <a href={`#${page}`} data-page={page} className={active ? 'active' : ''} aria-current={active ? 'page' : undefined} onClick={event => { event.preventDefault(); go(page); }}>
+  return <a href={routeHref(page)} data-page={page} className={active ? 'active' : ''} aria-current={active ? 'page' : undefined} onClick={event => { if(internalClick(event)){event.preventDefault();go(page);} }}>
     {symbol && <Icon name={symbol} />}<span>{t(title)}{page === 'saved' && !symbol && <span className="nav-count" data-saved-count>{savedCount || ''}</span>}</span>
   </a>;
 }
 export function Header() {
-  const {user, t, go, menuOpen, setMenuOpen, logout} = useApp();
+  const {user, t, go, menuOpen, setMenuOpen, logout,requestLogin} = useApp();
   const profileRef = useRef(null);
   const [scrolled, setScrolled] = useState(window.scrollY > 12);
   useEffect(() => {
@@ -21,7 +22,8 @@ export function Header() {
     window.addEventListener('scroll',scroll,{passive:true}); document.addEventListener('click',click);
     return () => { window.removeEventListener('scroll',scroll); document.removeEventListener('click',click); };
   }, []);
-  return <header className={`app-header ${scrolled ? 'is-scrolled' : ''}`}><a href="#explore" className="brand" aria-label="Future Now" onClick={event => { event.preventDefault(); go('explore'); }}><Logo /></a>
+  if(!user)return <header className="app-header public-header"><a className="brand" href="/#explore" aria-label="Future Now"><Logo/></a><div className="header-actions"><LanguageSwitch/><Button action="public-login" onClick={requestLogin}>{t('login')}</Button></div></header>;
+  return <header className={`app-header ${scrolled ? 'is-scrolled' : ''}`}><a href="/#explore" className="brand" aria-label="Future Now" onClick={event => { event.preventDefault(); go('explore'); }}><Logo /></a>
     <nav className="main-nav" aria-label={t('explore')}><NavLink page="explore" /><NavLink page="categories" /><NavLink page="saved" /><NavLink page="proposals" /></nav>
     <div className="header-actions"><LanguageSwitch /><span className="separator" /><button type="button" className="icon-button" data-action="settings" aria-label={t('settings')} onClick={() => go('settings')}><Icon name="settings" /></button>
       <div className="header-profile-wrap" ref={profileRef}><button type="button" className="header-profile" data-action="profile-menu" aria-label={t('profile')} aria-expanded={menuOpen} onClick={() => setMenuOpen(value => !value)}><Avatar user={user}/><span>{user.display_name?.split(' ')[0] || user.nickname}</span><Icon name="down" /></button>

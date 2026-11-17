@@ -245,6 +245,7 @@ class SessionOut(BaseModel):
 
 
 class EventOut(BaseModel):
+    page_url: str = ''
     id: int
     title: str
     description: str

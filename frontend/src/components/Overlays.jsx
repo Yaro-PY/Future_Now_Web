@@ -2,50 +2,11 @@ import {useEffect, useState} from 'react';
 import {useApp, BOT_URL, imageFor, safeExternal} from '../context.jsx';
 import {Icon} from './Icons.jsx';
 import {AsyncButton, Button, Close, Criteria, DataForm, Dialog, Field, Select, Skeletons, Submit} from './Common.jsx';
-import {FavoriteButton, FilterForm, Price} from '../pages/Catalog.jsx';
+import {FilterForm} from '../pages/Catalog.jsx';
 import {ProposalForm} from '../pages/Proposals.jsx';
 import {SecurityWizard} from '../pages/Security.jsx';
 import {AccountActions} from '../pages/AccountActions.jsx';
 import {PublishedEditor, ReportReview} from '../pages/Administration.jsx';
-
-function Fact({label, children}) { return <div><dt>{label}</dt><dd>{children}</dd></div>; }
-export function DetailSheet({id}) {
-  const {api, user, t, date, language, setDetailId, setModal, toast, fail} = useApp();
-  const [event, setEvent] = useState(null);
-  const [error, setError] = useState(false);
-  useEffect(() => {
-    let active = true;
-    setEvent(null); setError(false);
-    api.detail(id).then(result => { if (active) setEvent(result); }).catch(problem => { if (active) { setError(true); fail(problem); } });
-    return () => { active = false; };
-  }, [id,language]);
-  async function share() {
-    const url = safeExternal(event.url);
-    if (navigator.clipboard?.writeText) {
-      try { await navigator.clipboard.writeText(url); toast(t('copied')); return; } catch { /* Show a selectable URL if clipboard access is unavailable. */ }
-    }
-    setModal({type:'share',url});
-  }
-  const close = () => setDetailId(null);
-  return <Dialog id="sheet" title={t('details')} className="detail-sheet" onClose={close} heading={false}>
-    {!event ? <><div className="modal-head"><span /><Close action="close-sheet" onClick={close} /></div><div className="sheet-body">{error ? <p role="alert">{t('serviceError')}</p> : <Skeletons />}</div></> : <>
-      <div className="sheet-toolbar"><Close className="sheet-close" action="close-sheet" onClick={close} /></div>
-      <div className="sheet-image"><img src={`/assets/images/${imageFor(event)}.jpg`} alt="" /></div>
-      <div className="sheet-body"><p className="eyebrow">{event.event_type_label}</p><h2>{event.title}</h2><div className="card-tags">{event.tags.map(tag => <span key={tag.value || tag.label}>{tag.label}</span>)}</div><div className="sheet-status"><Icon name="clock" />{t(event.status === 'expired' ? 'expired' : event.status === 'self_paced' ? 'selfPaced' : event.status === 'check_source' ? 'checkSource' : 'open')}</div>
-        <dl className="detail-facts"><Fact label={t('country')}>{event.country_label}</Fact><Fact label={t('format')}>{event.format_label}</Fact><Fact label={t('deadline')}>{event.is_self_paced && !event.deadline ? t('selfPaced') : date(event.deadline)}</Fact><Fact label={t('ageRange')}>{event.min_age === 0 && event.max_age == null ? t('noAgeRestriction') : event.min_age == null && event.max_age == null ? t('unknown') : `${event.min_age ?? '…'}–${event.max_age ?? '…'}`}</Fact><Fact label={t('criteria')}><Price event={event} /></Fact><Fact label={t('city')}>{event.city_label || t('unknown')}</Fact></dl>
-        <section className="sheet-section"><h3>{t('aboutOpportunity')}</h3><p>{event.description || t('unknown')}</p></section><section className="sheet-section"><h3>{t('organizer')}</h3><p>{event.organizer || event.source}</p></section>{event.requirements && <section className="sheet-section"><h3>{t('requirements')}</h3><p>{event.requirements}</p></section>}
-        <dl className="detail-facts"><Fact label={t('startDate')}>{date(event.start_at)}</Fact><Fact label={t('eventLanguage')}>{event.participation_language || t('unknown')}</Fact>{event.verified_at && <Fact label={t('sourceChecked')}>{date(event.verified_at)}</Fact>}</dl>
-        <div className="sheet-actions">{event.status !== 'expired' && event.registration_url && <AsyncButton className="button primary" data-action="registration" onClick={async () => { const result = await api.registration(id); location.assign(safeExternal(result.url)); }}>{t('registration')}<Icon name="external" /></AsyncButton>}
-          <FavoriteButton event={event} sheet onSaved={saved => setEvent(value => ({...value,saved}))} />
-          <AsyncButton className="button secondary" data-action="subscribe" onClick={async () => {
-            const enabled = !event.subscribed;
-            await api.subscribe(id,enabled); setEvent(value => ({...value,subscribed:enabled}));
-            toast(t(!user.telegram_linked ? 'linkTelegram' : !user.notifications.deadlines ? 'enableDeadlines' : enabled ? 'subscribed' : 'unsubscribe'));
-          }}><Icon name="bell" /><span>{t(event.subscribed ? 'unsubscribe' : 'subscribe')}</span></AsyncButton>
-        </div><div className="sheet-utilities"><AsyncButton className="text-button" data-action="share" onClick={share}><Icon name="share" />{t('share')}</AsyncButton><button type="button" className="text-button" data-action="report" onClick={() => setModal({type:'report',eventId:id})}><Icon name="flag" />{t('report')}</button></div><p className="sheet-note">{t('conditionsNote')}</p>
-      </div></>}
-  </Dialog>;
-}
 
 function Onboarding() {
   const {user, setUser, api, t, filters, applyFilters, go} = useApp();

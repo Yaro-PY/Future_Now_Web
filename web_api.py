@@ -22,6 +22,7 @@ from flow_catalog import CATALOGS, CRITERIA, FIELDS, TOPICS, TYPES, CITIES, COUN
 from identity import identity_complete, age_group
 from links import check_link
 from catalog_status import catalog_status
+from opportunity_pages import opportunity_path
 
 router = APIRouter(prefix='/api/v1', tags=['Website'])
 SESSION_COOKIE = 'fn_session'
@@ -334,7 +335,7 @@ def event_out(event, language, saved, subscribed):
     topics = event.topics or db.topics_from_subjects(event.subjects or [])
     url = event.url if ui.safe_url(event.url) else None
     status = db.event_status(event)
-    return schema.EventOut(id=event.id, title=event.title, description=event.description,
+    return schema.EventOut(id=event.id, page_url=opportunity_path(event), title=event.title, description=event.description,
         source=event.source, url=url, registration_url=url if status != 'expired' else None,
         event_type=kind, event_type_label=label(TYPES, kind, language), topics=topics,
         tags=[{'value': key, 'label': label(TOPICS, key, language)} for key in topics],
@@ -368,15 +369,17 @@ async def search(body: schema.Search, user: Principal = Depends(changing_user)):
 
 
 @router.get('/opportunities/{event_id}', response_model=schema.EventOut)
-async def detail(event_id: int, user: Principal = Depends(current_user)):
+async def detail(event_id: int, request: Request, user: Principal | None = Depends(optional_user)):
+    if not 0<event_id<=2147483647: fail('not_found',404)
     event = await db.get_event(event_id)
     if not event: fail('not_found', 404)
-    saved, subscribed = await event_flags(user.account.telegram_id)
-    return event_out(event, user.account.language, saved, subscribed)
+    saved, subscribed = await event_flags(user.account.telegram_id if user else None)
+    return event_out(event, request_language(request), saved, subscribed)
 
 
 @router.get('/opportunities/{event_id}/registration')
-async def registration(event_id: int, user: Principal = Depends(current_user)):
+async def registration(event_id: int):
+    if not 0<event_id<=2147483647: fail('not_found',404)
     event = await db.get_event(event_id)
     if not event: fail('not_found', 404)
     if db.event_status(event) == 'expired': fail('opportunity_expired', 409)

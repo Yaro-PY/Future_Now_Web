@@ -1,7 +1,7 @@
 import {useEffect, useRef, useState} from 'react';
 import {FutureNowAPI} from '../api.js';
 import {ANY_FILTERS, AppContext} from '../context.jsx';
-import {readRoute, ROUTES} from '../routing/routes.js';
+import {readRoute, readOpportunityId, opportunityHref, routeHref, moveTo, authReturnPath, ROUTES} from '../routing/routes.js';
 import {useDebouncedValue} from '../hooks/useDebouncedValue.js';
 import {useLocale} from '../hooks/useLocale.js';
 import {useRemoteResource} from '../hooks/useRemoteResource.js';
@@ -21,7 +21,7 @@ export function AppProvider({children}) {
   const [savedCount, setSavedCount] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [modal, setModal] = useState(null);
-  const [detailId, setDetailId] = useState(null);
+  const [detailId, setRouteDetailId] = useState(readOpportunityId);
   const [revision, setRevision] = useState(0);
   const favoriteLocks = useRef(new Set());
   const {notification,toast} = useToast();
@@ -30,7 +30,7 @@ export function AppProvider({children}) {
 
   function clearSession() {
     setUser(null); setSavedCount(0); setCollection(null); setProposalPage(null);
-    setDetailId(null); setModal(null); setMenuOpen(false); api.csrfToken = null;
+    setModal(null); setMenuOpen(false); api.csrfToken = null;
   }
   function fail(error) {
     if (error?.status === 401 && user) { clearSession(); toast(t('sessionExpired')); }
@@ -44,7 +44,9 @@ export function AppProvider({children}) {
     setConfig(nextConfig); setLanguage(nextLanguage);
     setFilters({...ANY_FILTERS, ...nextUser.filters}); setQuery(''); setSearchQuery(''); setPage(1);
     setCollection(null); setProposalPage(null); setUser(nextUser);
-    setRoute(readRoute());
+    const returnPath=authReturnPath();
+    if(returnPath) history.replaceState(history.state,'',returnPath);
+    setRoute(readRoute());setRouteDetailId(readOpportunityId());
     if (nextUser.onboarding_required || nextUser.filters_setup_required) setModal({type:'onboarding'});
   }
   useEffect(() => {
@@ -69,15 +71,15 @@ export function AppProvider({children}) {
     api.language = language;
   }, [language, route, Boolean(user), t]);
   useEffect(() => {
-    document.body.classList.toggle('auth-mode', !user);
-    document.body.classList.toggle('modal-open', Boolean(modal || detailId));
+    document.body.classList.toggle('auth-mode', !user && route!=='opportunity');
+    document.body.classList.toggle('modal-open', Boolean(modal));
     return () => { document.body.classList.remove('auth-mode','modal-open'); };
-  }, [Boolean(user), Boolean(modal), Boolean(detailId)]);
+  }, [Boolean(user), Boolean(modal), route]);
   useEffect(() => { setSearchQuery(debouncedQuery); setPage(1); }, [debouncedQuery]);
   useEffect(() => {
     const navigate = () => {
-      setRoute(readRoute()); setPage(1); setCollection(null); setProposalPage(null);
-      setMenuOpen(false); setModal(null); setDetailId(null); window.scrollTo({top:0,behavior:'instant'});
+      setRoute(readRoute());setRouteDetailId(readOpportunityId());
+      setMenuOpen(false);setModal(null);
     };
     const keys = event => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
@@ -86,8 +88,8 @@ export function AppProvider({children}) {
       }
       if (event.key === 'Escape') setMenuOpen(false);
     };
-    window.addEventListener('hashchange',navigate); window.addEventListener('keydown',keys);
-    return () => { window.removeEventListener('hashchange',navigate); window.removeEventListener('keydown',keys); };
+    window.addEventListener('hashchange',navigate);window.addEventListener('popstate',navigate);window.addEventListener('keydown',keys);
+    return () => { window.removeEventListener('hashchange',navigate);window.removeEventListener('popstate',navigate);window.removeEventListener('keydown',keys); };
   }, []);
   const accountKey = user?.public_id;
   const onboardingOpen = modal?.type === 'onboarding';
@@ -119,10 +121,18 @@ export function AppProvider({children}) {
   useEffect(() => { if (user && ROUTES[route]?.adminOnly && user.role !== 'admin') go('explore'); }, [route,user?.role]);
 
   function go(value) {
-    setDetailId(null); setModal(null); setMenuOpen(false); setPage(1);
+    setModal(null); setMenuOpen(false); setPage(1);
     setCollection(null); setProposalPage(null);
     if (readRoute() === value) { setRoute(value); setRevision(value => value + 1); }
-    else location.hash = value;
+    else moveTo(routeHref(value));
+  }
+  function setDetailId(event) {
+    if(event==null){go('explore');return;}
+    moveTo(opportunityHref(event));
+  }
+  function requestLogin() {
+    const next=readOpportunityId()?location.pathname:'';
+    moveTo('/'+(next?'?next='+encodeURIComponent(next):'')+'#login');
   }
   async function changeLanguage(value) {
     if (value === language) return;
@@ -156,7 +166,7 @@ export function AppProvider({children}) {
   const value = {
     resourceRevision:revision,
     api, user, setUser, config, booting, notification, language, t, date, options:(name, excludeAny = false) => (config?.catalogs?.[name] || []).filter(row => !excludeAny || row.value !== 'any'),
-    route, go, filters, applyFilters, resetFilters, query, setQuery, submitQuery:() => { setSearchQuery(query.trim()); setPage(1); setRevision(value => value + 1); },
+    route, go, requestLogin, filters, applyFilters, resetFilters, query, setQuery, submitQuery:() => { setSearchQuery(query.trim()); setPage(1); setRevision(value => value + 1); },
     openAssistantCatalog:values=>{setQuery('');setSearchQuery('');applyFilters(values);go('explore');},
     page, setPage, collection, collectionError, proposalPage, proposalError, savedCount, menuOpen, setMenuOpen,
     modal, setModal, detailId, setDetailId, toast, fail, errorMessage, enter, changeLanguage, toggleFavorite, refreshCatalog,

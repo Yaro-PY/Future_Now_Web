@@ -14,7 +14,7 @@ function hiddenThisSession() {
 }
 
 export function ElectronicSpider() {
-  const {language,modal,detailId,menuOpen}=useApp();
+  const {language,modal,menuOpen}=useApp();
   const assistant=useSiteAssistant();
   const canvas=useRef(null);
   const engine=useRef(null);
@@ -22,7 +22,7 @@ export function ElectronicSpider() {
   const [hidden,setHidden]=useState(hiddenThisSession);
   const [panel,setPanel]=useState(null);
   const uk=language!=='en';
-  panelRef.current=Boolean(panel||modal||detailId!=null||menuOpen);
+  panelRef.current=Boolean(panel||modal||menuOpen);
   useEffect(()=>{
     if(hidden) return;
     const element=canvas.current;
@@ -48,8 +48,8 @@ export function ElectronicSpider() {
     };
   },[hidden]);
   useEffect(()=>{
-    engine.current?.setPaused(Boolean(panel||modal||detailId!=null||menuOpen));
-  },[hidden,panel,modal,detailId,menuOpen]);
+    engine.current?.setPaused(Boolean(panel||modal||menuOpen));
+  },[hidden,panel,modal,menuOpen]);
   useEffect(()=>{
     if(!panel) return;
     const previous=document.body.style.overflow;

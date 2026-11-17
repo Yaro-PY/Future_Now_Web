@@ -57,17 +57,23 @@ async def require_ready(request: Request, call_next):
     return await call_next(request)
 
 
+HTML_HEADERS = {
+    'Cache-Control': 'no-cache',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+}
+
+from opportunity_pages import install as install_opportunity_pages
+install_opportunity_pages(app, STATIC, HTML_HEADERS)
+
+
 @app.get('/', response_class=HTMLResponse)
 async def root():
     frontend = STATIC / 'react' / 'index.html'
     if not frontend.is_file():
         return PlainTextResponse('Build the React frontend: cd frontend && npm ci && npm run build', status_code=503)
-    return FileResponse(frontend, headers={
-        'Cache-Control': 'no-cache',
-        'X-Content-Type-Options': 'nosniff',
-        'Referrer-Policy': 'strict-origin-when-cross-origin',
-        'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
-    })
+    return FileResponse(frontend, headers=HTML_HEADERS)
 
 
 @app.get('/favicon.ico', include_in_schema=False)
