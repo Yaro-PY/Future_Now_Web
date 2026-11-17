@@ -131,29 +131,6 @@ class AssistantTests(APITests):
         self.assertEqual([item['title'] for item in ukrainian['results']],['Python з нуля'])
         self.assertIn('Для початківців',ukrainian['labels'])
 
-    async def test_gandalf_easter_eggs_preserve_the_course_search(self):
-        await self.seed()
-        first=await self.ask('Бесплатные курсы Python, мне 16')
-        for phrase in ('Гэндальф','ты не пройдёшь','где кольцо'):
-            result=await self.ask(phrase,first['context'])
-            self.assertEqual(result['kind'],'wizard')
-            self.assertEqual(result['results'],[])
-            self.assertEqual(result['context'],first['context'])
-            self.assertIn('Гэндальф',result['message'])
-        followup=await self.ask('только онлайн',result['context'])
-        self.assertEqual(followup['context']['terms'],['python'])
-        self.assertEqual(followup['context']['age_min'],16)
-        addressed=await self.ask('Гэндальф найди бесплатные курсы по Linux онлайн')
-        self.assertEqual(addressed['context']['terms'],['linux'])
-        self.assertEqual([item['title'] for item in addressed['results']],['Linux basics'])
-
-    async def test_gandalf_identity_uses_the_conversation_language(self):
-        await self.register()
-        for phrase,locale in [('Привіт Ґандальф','uk'),('Hello Gandalf','en'),('Привет Гэндальф','ru')]:
-            result=await self.ask(phrase)
-            self.assertEqual(result['kind'],'wizard')
-            self.assertEqual(result['context']['language'],locale)
-
     async def test_invalid_age_is_a_clarification_not_a_server_error(self):
         await self.seed()
         for value in ('мне 11','мне 101','курсы для 17-14 лет'):

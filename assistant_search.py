@@ -1,6 +1,5 @@
 """Conversational, catalogue-grounded retrieval. No external model or stored chat."""
 import re
-from gandalf_voice import wizard_reply
 import unicodedata
 from typing import Annotated, Literal
 
@@ -106,9 +105,6 @@ def plan(message,previous):
     text=normalize(message)
     context.language=detect_language(text,context.language)
     lang=context.language
-    if re.fullmatch(r'(?:(?:привет|привіт|вітаю|hello|hi) )?(?:г[еэєа]нд[ао]льф|ґандальф|gandalf|ты не пройдешь|ти не пройдеш|you shall not pass|где кольцо|де перстень|where is the ring|моя прелесть|my precious)[ !.]*',text):
-        return 'wizard',context,None
-    text=re.sub(r'^(?:г[еэєа]нд[ао]льф|ґандальф|gandalf)\s+','',text)
     if re.fullmatch(r'(?:привіт|вітаю|доброго дня|привет|здравствуй\w*|добрый день|hello|hi|hey)[ !.]*',text):
         return 'greeting',context,None
     if re.fullmatch(r'(?:дякую|спасиб[оі]|thanks|thank you|дяки|ок|окей|okay|ok)[ !.]*',text):
@@ -231,11 +227,10 @@ def describe(context):
 
 def reply(kind,context,total=0,shown=0,extra=None):
     lang=context.language
-    if kind=='wizard': return wizard_reply(lang)
     if kind=='help': return extra['message']
-    if kind=='greeting': return choose(lang,'Привіт, мандрівнику! Я Ґандальф. Допоможу підібрати курс. Що хочеш вивчати? Можеш одразу додати: онлайн, безкоштовно та свій вік.','Привет, путник! Я Гэндальф. Помогу подобрать курс. Что хочешь изучать? Можешь сразу добавить: онлайн, бесплатно и свой возраст.','Hello, traveller! I’m Gandalf. I can help you find a course. What would you like to learn? You can also mention online, free and your age.')
+    if kind=='greeting': return choose(lang,'Привіт! Допоможу підібрати курс. Що хочеш вивчати? Можеш одразу додати: онлайн, безкоштовно та свій вік.','Привет! Помогу подобрать курс. Что хочешь изучать? Можешь сразу добавить: онлайн, бесплатно и свой возраст.','Hi! I can help you find a course. What would you like to learn? You can also mention online, free and your age.')
     if kind=='thanks': return choose(lang,'Будь ласка! Якщо хочеш, уточни тему чи умови — підберемо ще варіанти.','Пожалуйста! Если хочешь, уточни тему или условия — подберём ещё варианты.','You’re welcome! Tell me another topic or preference whenever you want to refine the search.')
-    if kind=='smalltalk': return wizard_reply(lang)
+    if kind=='smalltalk': return choose(lang,'Я помічник Future Now. Допомагаю знаходити курси в нашому каталозі та розбиратися із сайтом. Що хочеш вивчати?','Я помощник Future Now. Помогаю находить курсы в нашем каталоге и разбираться с сайтом. Что хочешь изучать?','I’m the Future Now assistant. I help you find courses in our catalogue and use the site. What would you like to learn?')
     if kind=='invalid_age': return choose(lang,'Можу шукати для віку від 12 до 100 років. Напиши, будь ласка, вік або діапазон, наприклад «мені 16».','Могу искать для возраста от 12 до 100 лет. Напиши возраст или диапазон, например «мне 16».','Please give an age from 12 to 100, or an age range, for example “I am 16”.')
     if kind=='clarify': return choose(lang,'Що тобі цікаво вивчати? Наприклад, програмування, англійську чи дизайн. Якщо тема неважлива, напиши «покажи всі курси».','Что тебе интересно изучать? Например, программирование, английский или дизайн. Если тема не важна, напиши «покажи все курсы».','What would you like to learn: programming, English, design, or something else? Say “show all courses” if you have no topic in mind.')
     if not total: return choose(lang,'За цими умовами поки нічого не знайшов у каталозі. Можемо змінити формат, вік або тему. Умови не розширюватиму без твого прохання.','По этим условиям пока ничего не нашёл в каталоге. Можно изменить формат, возраст или тему. Условия без твоей просьбы расширять не буду.','I couldn’t find a current listing matching these preferences. We can change the format, age or topic. I won’t loosen your preferences without asking.')
@@ -251,7 +246,7 @@ def reply(kind,context,total=0,shown=0,extra=None):
 
 def suggestions(context,kind,total):
     lang=context.language
-    if kind in ('greeting','clarify','thanks','smalltalk','wizard'):
+    if kind in ('greeting','clarify','thanks','smalltalk'):
         return choose(lang,['Курси програмування','Безкоштовні онлайн-курси','Покажи всі курси'],['Курсы программирования','Бесплатные онлайн-курсы','Покажи все курсы'],['Programming courses','Free online courses','Show all courses'])
     if kind=='search' and not total:
         result=[]
