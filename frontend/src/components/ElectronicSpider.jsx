@@ -74,12 +74,13 @@ export function ElectronicSpider() {
   if(hidden||!enabled) return null;
   return <>
     <canvas ref={canvas} className="electronic-spider" aria-hidden="true" />
-    <button type="button" className="sr-only spider-keyboard-access" data-spider-ui data-action="spider-menu" onClick={()=>setPanel('menu')}>{uk?'Відкрити меню павука':'Open spider menu'}</button>
-    {panel==='menu'&&<Dialog id="spider-menu" className="modal spider-menu" title={uk?'Меню павука':'Spider menu'} onClose={()=>setPanel(null)}>
+    <button type="button" className="sr-only spider-keyboard-access" data-spider-ui data-action="spider-menu" onClick={()=>setPanel('menu')}>{uk?'Відкрити меню Ґандальфа':'Open Gandalf menu'}</button>
+    {panel==='menu'&&<Dialog id="spider-menu" className="modal spider-menu" title={uk?'Ґандальф · твій провідник':'Gandalf · your guide'} onClose={()=>setPanel(null)}>
       <div className="modal-body" data-spider-ui>
-        <p>{uk?'Обери, що зробити.':'Choose an action.'}</p>
+        <p>{uk?'Обери свій наступний крок, мандрівнику.':'Choose your next step, traveller.'}</p>
         <div className="spider-actions">
           <Button kind="secondary" action="spider-assistant" onClick={()=>setPanel('assistant')}><Icon name="spark"/><span>{uk?'Помічник по сайту':'Site assistant'}</span><Icon name="arrow"/></Button>
+          <Button kind="line" action="gandalf-light" onClick={()=>{setPanel(null);engine.current?.castLight();}}><Icon name="spark"/>{uk?'Світло посоха':'Light the staff'}</Button>
           <Button kind="line" action="spider-hide" onClick={hide}><Icon name="close"/>{uk?'Приховати на цю сесію':'Hide for this session'}</Button>
         </div>
         <p className="spider-session-note">{uk?'Приховування діє в цій вкладці, зокрема після оновлення сторінки.':'Stays hidden in this tab, including after a page refresh.'}</p>

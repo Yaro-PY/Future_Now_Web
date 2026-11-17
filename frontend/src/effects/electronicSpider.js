@@ -1,11 +1,14 @@
 // Adapted from the user-provided ElectronicSpider/script.js.
 // Keep its inverse-kinematics tentacles, with one managed animation loop.
+import {gandalfDestination} from './gandalfBehavior.js';
+
 export function startElectronicSpider(canvas,{hue=215,color='#2563eb'}={}) {
   const context=canvas.getContext('2d');
-  if(!context) return {destroy(){},setPaused(){}};
+  if(!context) return {destroy(){},setPaused(){},castLight(){}};
   const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
   let width=0,height=0,legs=[],frame=0,previousTime=0,lastPaint=0,phase=2.25;
   let stopped=false,paused=false,ready=false;
+  let lightUntil=0,lightTimer=0;
   const target={x:0,y:0},lastTarget={x:0,y:0};
   const pointer={x:0,y:0,at:-Infinity};
   const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -76,6 +79,16 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb'}={}) {
     context.arc(target.x,target.y,Math.min(12,speed+5),0,Math.PI*2);
     context.fillStyle=color;
     context.fill();
+    // A grey pointed hat and a small staff keep the original spider silhouette.
+    context.save();context.fillStyle='#647080';context.strokeStyle='#46515f';context.lineWidth=1.2;
+    context.beginPath();context.moveTo(target.x-10,target.y-8);context.lineTo(target.x-3,target.y-34);context.lineTo(target.x+10,target.y-8);context.closePath();context.fill();
+    context.beginPath();context.moveTo(target.x-13,target.y-7);context.lineTo(target.x+13,target.y-7);context.stroke();
+    context.strokeStyle='#79715f';context.lineWidth=2;context.beginPath();context.moveTo(target.x+18,target.y+12);context.lineTo(target.x+21,target.y-23);context.stroke();
+    const lit=performance.now()<lightUntil;
+    context.fillStyle=color;context.shadowColor=color;context.shadowBlur=lit?20:5;
+    context.beginPath();context.arc(target.x+21,target.y-24,lit?5:2.5,0,Math.PI*2);context.fill();
+    if(lit){context.shadowBlur=0;context.globalAlpha=.2;context.lineWidth=1.4;context.strokeStyle=color;context.beginPath();context.arc(target.x+21,target.y-24,40,0,Math.PI*2);context.stroke();}
+    context.restore();
     lastTarget.x=target.x;lastTarget.y=target.y;
   }
 
@@ -101,16 +114,11 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb'}={}) {
     if(time-lastPaint>=interval) {
       const elapsed=Math.min((time-(previousTime||time-interval))/1000,.05);
       previousTime=time;lastPaint=time;phase+=elapsed*.4;
-      let destination;
-      if(time-pointer.at<1600) destination=pointer;
-      else {
-        const sine=Math.sin(phase),denominator=1+sine*sine;
-        destination={x:width/2+(width*.39*Math.cos(phase))/denominator,
-          y:height/2+(height*.64*Math.cos(phase)*sine)/denominator};
-      }
+      const destination=gandalfDestination({time,phase,width,height,pointer,target});
+      canvas.dataset.gandalfState=destination.state;
       const blend=1-Math.exp(-elapsed*6);
-      target.x+=(clamp(destination.x,12,width-12)-target.x)*blend;
-      target.y+=(clamp(destination.y,12,height-12)-target.y)*blend;
+      target.x+=(clamp(destination.x,20,width-32)-target.x)*blend;
+      target.y+=(clamp(destination.y,42,height-20)-target.y)*blend;
       paint();
     }
     frame=requestAnimationFrame(animate);
@@ -135,7 +143,7 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb'}={}) {
   document.addEventListener('visibilitychange',syncAnimation);
   motion.addEventListener('change',syncAnimation);
   function destroy() {
-    stopped=true;
+    stopped=true;clearTimeout(lightTimer);
     if(frame) cancelAnimationFrame(frame);
     window.removeEventListener('resize',resize);
     window.removeEventListener('pointermove',onPointer);
@@ -144,5 +152,9 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb'}={}) {
     document.removeEventListener('visibilitychange',syncAnimation);
     motion.removeEventListener('change',syncAnimation);
   }
-  return {destroy,setPaused(value){paused=value;syncAnimation();}};
+  function castLight(){
+    if(stopped)return;lightUntil=performance.now()+2200;clearTimeout(lightTimer);canvas.dataset.gandalfLight='on';paint();
+    lightTimer=setTimeout(()=>{lightUntil=0;delete canvas.dataset.gandalfLight;if(!stopped)paint();},2200);
+  }
+  return {destroy,castLight,setPaused(value){paused=value;syncAnimation();}};
 }
