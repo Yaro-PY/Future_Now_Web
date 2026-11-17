@@ -14,7 +14,10 @@ function hiddenThisSession() {
 }
 
 export function ElectronicSpider() {
-  const {language,modal,menuOpen}=useApp();
+  const {language,modal,menuOpen,user}=useApp();
+  const enabled=user?.appearance?.spider_enabled!==false;
+  const accent=user?.appearance?.accent||'blue';
+  const palette={blue:[215,'#2563eb'],lemon:[54,'#a39100'],orange:[26,'#cb600b'],red:[2,'#c33936'],green:[146,'#168354']};
   const assistant=useSiteAssistant();
   const canvas=useRef(null);
   const engine=useRef(null);
@@ -24,9 +27,9 @@ export function ElectronicSpider() {
   const uk=language!=='en';
   panelRef.current=Boolean(panel||modal||menuOpen);
   useEffect(()=>{
-    if(hidden) return;
+    if(hidden||!enabled) return;
     const element=canvas.current;
-    const controller=startElectronicSpider(element);
+    const controller=startElectronicSpider(element,{hue:palette[accent][0],color:palette[accent][1]});
     engine.current=controller;
     let press=null;
     function onPress(event) {press={x:event.clientX,y:event.clientY};}
@@ -46,10 +49,10 @@ export function ElectronicSpider() {
       window.removeEventListener('click',onClick,true);
       controller.destroy();engine.current=null;
     };
-  },[hidden]);
+  },[hidden,enabled,accent]);
   useEffect(()=>{
     engine.current?.setPaused(Boolean(panel||modal||menuOpen));
-  },[hidden,panel,modal,menuOpen]);
+  },[hidden,enabled,accent,panel,modal,menuOpen]);
   useEffect(()=>{
     if(!panel) return;
     const previous=document.body.style.overflow;
@@ -60,7 +63,15 @@ export function ElectronicSpider() {
     try {sessionStorage.setItem(sessionKey,'1');} catch { /* Keep the current page hidden even when storage is unavailable. */ }
     setPanel(null);setHidden(true);
   }
-  if(hidden) return null;
+  useEffect(()=>{
+    if(!enabled)setPanel(null);
+  },[enabled]);
+  useEffect(()=>{
+    const update=event=>{if(event.detail?.spider_enabled){try{sessionStorage.removeItem(sessionKey);}catch{}setHidden(false);}};
+    window.addEventListener('future-now:appearance',update);
+    return ()=>window.removeEventListener('future-now:appearance',update);
+  },[]);
+  if(hidden||!enabled) return null;
   return <>
     <canvas ref={canvas} className="electronic-spider" aria-hidden="true" />
     <button type="button" className="sr-only spider-keyboard-access" data-spider-ui data-action="spider-menu" onClick={()=>setPanel('menu')}>{uk?'Відкрити меню павука':'Open spider menu'}</button>

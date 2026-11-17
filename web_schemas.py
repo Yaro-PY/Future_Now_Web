@@ -109,7 +109,18 @@ class Notifications(Input):
     expired: bool = True
 
 
+class Appearance(Input):
+    accent: Literal['blue','lemon','orange','red','green'] = 'blue'
+    spider_enabled: bool = True
+
+
+class AppearancePatch(Input):
+    accent: Literal['blue','lemon','orange','red','green'] | None = None
+    spider_enabled: bool | None = None
+
+
 class Settings(Input):
+    appearance: AppearancePatch | None = None
     language: Language | None = None
     notifications: Notifications | None = None
 
@@ -202,6 +213,7 @@ class Subscription(Input):
 
 
 class UserOut(BaseModel):
+    appearance: Appearance = Field(default_factory=Appearance)
     avatar_url: str | None = None
     public_id: str | None
     nickname: str | None

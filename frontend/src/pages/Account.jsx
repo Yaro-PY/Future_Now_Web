@@ -3,6 +3,7 @@ import {useApp, BOT_URL, initial} from '../context.jsx';
 import {Icon} from '../components/Icons.jsx';
 import {Criteria, DataForm, Field, LanguageSwitch, Password, Select, Submit} from '../components/Common.jsx';
 import {Avatar, ProfilePhoto} from '../components/ProfilePhoto.jsx';
+import {AppearanceSettings} from './Appearance.jsx';
 import {SecuritySettings} from './Security.jsx';
 import {AccountRail, PageHeading} from '../components/Layout.jsx';
 
@@ -28,6 +29,7 @@ export function SettingsPage() {
   const {user, setUser, api, t, toast, passwordChanged, setModal} = useApp();
   return <main className="page content-page" id="main-content"><PageHeading title="settingsTitle" subtitle="settingsSubtitle" action={false} /><div className="content-layout"><AccountRail /><section>
     <section className="form-section"><h2>{t('language')}</h2><LanguageSwitch /></section>
+    <AppearanceSettings/>
     <DataForm kind="notifications" className="form-section" onSubmit={async data => { setUser(await api.saveSettings({notifications:{new:data.has('new'),deadlines:data.has('deadlines'),expired:data.has('expired')}})); toast(t('savedNotice')); }}><h2>{t('notifications')}</h2>
       {!user.telegram_linked && <div className="notice"><Icon name="bell" /><span>{t('linkTelegram')} <a href={BOT_URL} target="_blank" rel="noopener noreferrer">{t('openBot')}</a></span></div>}
       {[['new','notifyNew','notifyNewText'],['deadlines','notifyDeadlines','notifyDeadlinesText'],['expired','notifyExpired','notifyExpiredText']].map(([key,title,description]) => <label key={key} className="toggle-row"><span><strong>{t(title)}</strong><small>{t(description)}</small></span><input type="checkbox" name={key} defaultChecked={user.notifications[key]} /></label>)}<div className="form-actions"><Submit>{t('save')}</Submit></div>

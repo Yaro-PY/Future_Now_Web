@@ -1,6 +1,6 @@
 // Adapted from the user-provided ElectronicSpider/script.js.
 // Keep its inverse-kinematics tentacles, with one managed animation loop.
-export function startElectronicSpider(canvas) {
+export function startElectronicSpider(canvas,{hue=215,color='#2563eb'}={}) {
   const context=canvas.getContext('2d');
   if(!context) return {destroy(){},setPaused(){}};
   const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -36,7 +36,7 @@ export function startElectronicSpider(canvas) {
   class Tentacle {
     constructor(x,y,length,count) {
       this.x=x;this.y=y;this.length=length;this.random=Math.random();
-      this.color=`hsl(${this.random*20+215} 92% ${this.random*12+44}%)`;
+      this.color=`hsl(${this.random*20+hue} 92% ${this.random*12+44}%)`;
       this.segments=[new Segment(this,length/count,true)];
       for(let i=1;i<count;i++) this.segments.push(new Segment(this.segments[i-1],length/count,false));
     }
@@ -74,7 +74,7 @@ export function startElectronicSpider(canvas) {
     }
     context.beginPath();
     context.arc(target.x,target.y,Math.min(12,speed+5),0,Math.PI*2);
-    context.fillStyle='#2563eb';
+    context.fillStyle=color;
     context.fill();
     lastTarget.x=target.x;lastTarget.y=target.y;
   }

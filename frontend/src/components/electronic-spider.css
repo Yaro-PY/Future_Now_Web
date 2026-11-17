@@ -18,23 +18,23 @@
 .spider-menu { width: min(410px, calc(100vw - 32px)); }
 .spider-actions { display: grid; gap: 10px; margin: 20px 0; }
 .spider-actions .button { width: 100%; justify-content: flex-start; gap: 12px; }
-.spider-actions .button:first-child { background: #edf2ff; color: #254bd9; border-color: #dce5ff; }
+.spider-actions .button:first-child { background: var(--blue-soft); color: #254bd9; border-color: #dce5ff; }
 .spider-actions .button:first-child .icon:last-child { margin-left: auto; }
 .spider-menu .spider-session-note { font-size: 10px; }
 .spider-assistant { width: min(530px, calc(100vw - 32px)); }
 .spider-assistant-status { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; }
-.spider-assistant-status>span { border-radius: 6px; padding: 5px 8px; font-size: 9px; color: #4261b5; background: #edf2ff; }
+.spider-assistant-status>span { border-radius: 6px; padding: 5px 8px; font-size: 9px; color: var(--blue); background: var(--blue-soft); }
 .spider-assistant-status .button { font-size: 10px; padding: 6px 0; }
 .spider-assistant-status .button .icon { transform: rotate(180deg); }
 .spider-messages { max-height: min(34dvh, 300px); min-height: 100px; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 10px; padding: 3px 3px 12px; }
 .spider-message { border-radius: 14px; padding: 13px 15px; background: #f4f6fa; max-width: 94%; align-self: flex-start; }
-.spider-message.user { align-self: flex-end; background: #edf2ff; }
+.spider-message.user { align-self: flex-end; background: var(--blue-soft); }
 .spider-message p { color: #4d576a; font-size: 11px; line-height: 1.8; }
-.spider-message>.icon { width: 15px; height: 15px; margin-bottom: 7px; color: #4268f6; }
-.spider-message .button { font-size: 10px; padding: 10px 0 0; color: #4261b5; }
+.spider-message>.icon { width: 15px; height: 15px; margin-bottom: 7px; color: var(--blue); }
+.spider-message .button { font-size: 10px; padding: 10px 0 0; color: var(--blue); }
 .spider-suggestions { display: flex; flex-wrap: wrap; gap: 6px; margin: 13px 0; }
 .spider-suggestions button { padding: 7px 9px; font-size: 9px; border: 1px solid #e1e6ef; border-radius: 9px; color: #68758b; text-align: left; }
-.spider-suggestions button:hover { background: #f3f6ff; }
+.spider-suggestions button:hover { background: var(--blue-soft); }
 .spider-question { display: flex; gap: 8px; }
 .spider-question input { min-width: 0; flex: 1; border: 1px solid #dce3ee; border-radius: 11px; padding: 12px; background: #fff; color: #191b20; font-size: 12px; }
 .spider-question .button { min-width: 43px; padding: 10px; }
@@ -58,13 +58,13 @@ dialog.spider-assistant[open] { display: flex; flex-direction: column; }
 .spider-assistant .spider-message.assistant { width: 100%; max-width: 100%; }
 dialog.spider-assistant .spider-message p { color: #4d576a; font-size: 12px; line-height: 1.75; white-space: pre-line; }
 .assistant-labels { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
-.assistant-labels span { padding: 4px 7px; border-radius: 6px; color: #536899; background: #e8edf8; font-size: 9px; }
+.assistant-labels span { padding: 4px 7px; border-radius: 6px; color: var(--blue); background: var(--blue-soft); font-size: 9px; }
 .assistant-results { display: grid; gap: 8px; margin-top: 12px; }
 .assistant-course { width: 100%; display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px solid #e0e6ef; border-radius: 12px; background: #fff; text-align: left; }
 .assistant-course:hover { border-color: #a9bdf8; background: #fcfdff; }
 .assistant-course-title { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; font-weight: 600; color: #263347; line-height: 1.5; }
-.assistant-course-title .icon { width: 16px; height: 16px; min-width: 16px; color: #4268f6; }
-.assistant-course-meta { font-size: 10px; color: #4f648b; line-height: 1.5; }
+.assistant-course-title .icon { width: 16px; height: 16px; min-width: 16px; color: var(--blue); }
+.assistant-course-meta { font-size: 10px; color: var(--blue); line-height: 1.5; }
 .assistant-course-source { font-size: 9px; color: #7b8797; line-height: 1.5; }
 .assistant-pending { display: flex; align-items: center; gap: 8px; font-size: 10px; color: #79869a; padding: 8px 4px; }
 .assistant-pending .icon { width: 14px; height: 14px; animation: spin 1.2s linear infinite; }

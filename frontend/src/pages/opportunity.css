@@ -18,7 +18,7 @@
 .opportunity-section{padding:30px 0;border-bottom:1px solid #e0e5ed}
 .opportunity-section h2{font-size:19px;letter-spacing:-.02em;margin:0 0 14px}
 .opportunity-section p{white-space:pre-line;overflow-wrap:anywhere;line-height:1.85;color:#647083;font-size:14px}
-.opportunity-source{display:inline-flex;align-items:center;gap:8px;color:#4368bd;margin-top:15px;font-size:12px;min-height:40px}
+.opportunity-source{display:inline-flex;align-items:center;gap:8px;color:var(--blue);margin-top:15px;font-size:12px;min-height:40px}
 .opportunity-source .icon{width:15px;height:15px}
 .opportunity-sidebar{position:sticky;top:100px;min-width:0}
 .opportunity-summary{background:#fff;border:1px solid #e1e6ee;border-radius:22px;padding:28px}
@@ -40,7 +40,7 @@
 .public-header{justify-content:space-between}
 .public-header .header-actions{display:flex;gap:18px}
 .public-header .button{font-size:12px;min-height:40px}
-.opportunity-source:hover,.opportunity-back:hover{color:#4268f6}
+.opportunity-source:hover,.opportunity-back:hover{color:var(--blue)}
 @media(max-width:1100px){.opportunity-layout{grid-template-columns:minmax(0,1fr) 300px;gap:30px}.opportunity-summary{padding:22px}}
 @media(max-width:850px){.opportunity-layout{grid-template-columns:minmax(0,1fr);gap:30px}.opportunity-sidebar{position:static}.opportunity-cover{aspect-ratio:16/8;margin-bottom:24px}.opportunity-summary{padding:26px}.opportunity-facts{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:30px}.opportunity-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.opportunity-actions .primary{grid-column:1/-1}}
 @media(max-width:520px){.opportunity-page{padding-top:18px;padding-bottom:40px}.opportunity-breadcrumb{margin-bottom:16px;gap:10px}.opportunity-breadcrumb>span{padding-left:10px}.opportunity-cover{aspect-ratio:4/3;border-radius:16px}.opportunity-cover figcaption{left:16px;bottom:16px}.opportunity-heading h1{font-size:29px}.opportunity-section{padding:24px 0}.opportunity-section p{font-size:14px}.opportunity-summary{padding:22px;border-radius:17px}.opportunity-facts{grid-template-columns:1fr}.opportunity-actions{grid-template-columns:1fr}.public-header .header-actions{gap:10px}.public-header .button{padding:10px 14px}.opportunity-breadcrumb>span{font-size:11px}}

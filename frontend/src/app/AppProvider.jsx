@@ -91,6 +91,11 @@ export function AppProvider({children}) {
     window.addEventListener('hashchange',navigate);window.addEventListener('popstate',navigate);window.addEventListener('keydown',keys);
     return () => { window.removeEventListener('hashchange',navigate);window.removeEventListener('popstate',navigate);window.removeEventListener('keydown',keys); };
   }, []);
+  useEffect(()=>{
+    if(user)document.documentElement.dataset.accent=user.appearance?.accent||'blue';
+    else delete document.documentElement.dataset.accent;
+    return ()=>{delete document.documentElement.dataset.accent;};
+  },[user?.public_id,user?.appearance?.accent]);
   const accountKey = user?.public_id;
   const onboardingOpen = modal?.type === 'onboarding';
   useEffect(() => {

@@ -167,6 +167,11 @@ def effective_filters(account):
     return schema.Filters.model_validate(values)
 
 
+def appearance_out(account):
+    raw=(account.notifications or {}).get('_appearance',{})
+    return schema.Appearance.model_validate(raw if isinstance(raw,dict) else {})
+
+
 def user_out(account):
     profile = account.profile or {}
     visible = {key: profile[key] for key in ('nickname', 'display_name', 'public_id', 'profile_updated_at', 'age', 'country', 'city', 'format', 'criteria') if key in profile}
@@ -178,11 +183,11 @@ def user_out(account):
     # A completed Telegram profile already supplies usable search preferences.
     # New website registrations still complete their initial filter step.
     needs_filters = not bool(account.search_defaults) and not (account.telegram_id > 0 and profile_complete)
-    return schema.UserOut(avatar_url=f'/api/v1/me/avatar?v={account.avatar_revision}' if account.avatar_revision else None, public_id=profile.get('public_id'), nickname=profile.get('nickname'),
+    return schema.UserOut(appearance=appearance_out(account), avatar_url=f'/api/v1/me/avatar?v={account.avatar_revision}' if account.avatar_revision else None, public_id=profile.get('public_id'), nickname=profile.get('nickname'),
         display_name=profile.get('display_name'), language=account.language,
         role='admin' if db.admin_user(account.telegram_id) else 'user', telegram_linked=account.telegram_id > 0,
         profile=visible or None, filters=effective_filters(account),
-        notifications=schema.Notifications.model_validate(account.notifications),
+        notifications=schema.Notifications.model_validate({key:account.notifications[key] for key in ('new','deadlines','expired') if key in account.notifications}),
         onboarding_required=not profile_complete,
         filters_setup_required=needs_filters)
 
@@ -315,7 +320,11 @@ async def settings(body: schema.Settings, request: Request, user: Principal = De
     if body.notifications is not None:
         prefs = body.notifications.model_dump()
         if prefs['new'] and not account.notifications.get('new'): account.notification_since = db.utcnow()
-        account.notifications = prefs
+        account.notifications = {**account.notifications, **prefs}
+    if body.appearance is not None:
+        current=appearance_out(account).model_dump()
+        current.update(body.appearance.model_dump(exclude_none=True))
+        account.notifications={**account.notifications,'_appearance':current}
     await db.save_account(account)
     request.state.language = account.language
     return user_out(account)
