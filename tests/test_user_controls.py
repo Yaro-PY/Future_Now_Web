@@ -1,6 +1,10 @@
 """Author ownership, review races, reauthentication and shared-account erasure."""
 import unittest
+from base64 import b64encode
 from datetime import timedelta
+from io import BytesIO
+
+from PIL import Image
 from unittest.mock import AsyncMock, patch
 
 import httpx
@@ -26,6 +30,52 @@ class UserControlsTests(unittest.IsolatedAsyncioTestCase):
         response=await self.request('POST','/me/proposals',json=proposal(url))
         self.assertEqual(response.status_code,201,response.text)
         return response.json()
+
+    async def test_author_cover_is_private_until_approval(self):
+        await self.register()
+        image = BytesIO()
+        Image.new('RGB', (48, 32), 'blue').save(image, format='PNG')
+        encoded = b64encode(image.getvalue()).decode('ascii')
+        invalid = await self.request('POST', '/me/proposals', json={**proposal(), 'cover_image': 'invalid!'})
+        self.assertEqual(invalid.status_code, 422, invalid.text)
+        self.assertEqual((await self.request('GET', '/me/proposals')).json()['total'], 0)
+
+        response = await self.request('POST', '/me/proposals', json={**proposal(), 'cover_image': encoded})
+        self.assertEqual(response.status_code, 201, response.text)
+        item = response.json()
+        private = item['cover_url']
+        self.assertTrue(private)
+        self.assertNotIn('cover_image', item['payload'])
+        self.assertEqual((await self.client.get(private, headers={'Cookie': ''})).status_code, 401)
+        preview = await self.client.get(private)
+        self.assertEqual(preview.status_code, 200)
+        self.assertEqual(preview.headers.get('cache-control'), 'no-store')
+        self.assertEqual(preview.headers.get('content-type'), 'image/webp')
+        self.assertEqual(await db.search_events({}), [])
+
+        path = f"/me/proposals/{item['id']}"
+        unchanged = await self.request('PATCH', path, json={'expected_revision': 1, 'values': item['payload']})
+        self.assertEqual(unchanged.json()['cover_url'], private)
+        removed = await self.request('PATCH', path, json={'expected_revision': 2,
+            'values': {**item['payload'], 'cover_image': None}})
+        self.assertEqual(removed.status_code, 200, removed.text)
+        self.assertIsNone(removed.json()['cover_url'])
+        self.assertEqual((await self.client.get(private)).status_code, 404)
+        replaced = await self.request('PATCH', path, json={'expected_revision': 3,
+            'values': {**item['payload'], 'cover_image': encoded}})
+        self.assertEqual(replaced.status_code, 200, replaced.text)
+        private = replaced.json()['cover_url']
+        await self.register('different_author')
+        self.assertEqual((await self.client.get(private)).status_code, 404)
+        self.assertEqual(await db.moderate_submission(item['id'], ADMIN, 'approved', expected_revision=3), 'edit_conflict')
+        self.assertEqual(await db.moderate_submission(item['id'], ADMIN, 'approved', expected_revision=4), 'moderation_done')
+        published = await db.get_submission(item['id'])
+        detail = (await self.client.get(f'/api/v1/opportunities/{published.event_id}')).json()
+        artwork = await self.client.get(detail['cover_url'], headers={'Cookie': ''})
+        self.assertEqual(artwork.content, preview.content)
+        self.assertEqual((await self.client.get(private)).status_code, 404)
+        async with db.Session() as session:
+            self.assertIsNone(await session.scalar(select(db.submission_covers.c.content)))
 
     async def test_author_can_edit_and_withdraw_but_not_publish(self):
         await self.register(); row=await self.create()

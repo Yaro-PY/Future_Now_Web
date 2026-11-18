@@ -23,7 +23,7 @@ from identity import identity_complete, age_group
 from links import check_link
 from catalog_status import catalog_status
 from opportunity_pages import opportunity_path
-from event_media import cover_urls, install as install_event_media
+from event_media import cover_urls, decode_proposal_cover, proposal_cover_urls, install as install_event_media
 
 router = APIRouter(prefix='/api/v1', tags=['Website'])
 SESSION_COOKIE = 'fn_session'
@@ -438,25 +438,33 @@ async def report(body: schema.Report, user: Principal = Depends(changing_user)):
     return {'id': report_id, 'ok': True}
 
 
-def proposal_out(row):
-    return schema.ProposalOut(id=row.id, revision=row.revision, updated_at=row.updated_at, payload=row.payload, status=row.status, created_at=row.created_at,
+def proposal_out(row, cover_url=None):
+    return schema.ProposalOut(id=row.id, cover_url=cover_url, revision=row.revision, updated_at=row.updated_at, payload=row.payload, status=row.status, created_at=row.created_at,
                               reviewed_at=row.reviewed_at, review_note=row.review_note, event_id=row.event_id)
 
 
+async def proposal_details(row):
+    covers = await proposal_cover_urls([row.id]) if row.status == 'pending' else {}
+    return proposal_out(row, covers.get(row.id))
+
+
 @router.post('/me/proposals', response_model=schema.ProposalOut, status_code=201)
-async def suggest(body: schema.Proposal, user: Principal = Depends(changing_user)):
-    payload = body.model_dump(mode='json')
+async def suggest(body: schema.ProposalWithCover, user: Principal = Depends(changing_user)):
+    payload = body.model_dump(mode='json', exclude={'cover_image'})
     payload['source'] = 'Пропозиція користувача / User suggestion'
-    event = body.event()
+    event = schema.Proposal.model_validate(payload).event()
     if db.event_status(db.Event(**event.__dict__)) == 'expired': fail('submission_expired', 422)
-    submission_id, error = await db.submit_proposal(user.account.telegram_id, payload)
+    cover = await decode_proposal_cover(body.cover_image, user.account.telegram_id)
+    submission_id, error = await db.submit_proposal(user.account.telegram_id, payload, cover=cover)
     if error: fail(error, 429 if error in ('proposal_limit', 'proposal_cooldown') else 409)
-    return proposal_out(await db.get_submission(submission_id))
+    return await proposal_details(await db.get_submission(submission_id))
 
 
 async def proposals_page(account_id, page, page_size):
     rows = await db.list_submissions(account_id)
-    return {'items': [proposal_out(row) for row in rows[(page - 1) * page_size:page * page_size]],
+    visible = rows[(page - 1) * page_size:page * page_size]
+    covers = await proposal_cover_urls([row.id for row in visible if row.status == 'pending'])
+    return {'items': [proposal_out(row, covers.get(row.id)) for row in visible],
             'total': len(rows), 'page': page, 'page_size': page_size, 'pages': max(1, math.ceil(len(rows) / page_size))}
 
 
@@ -469,15 +477,17 @@ async def my_proposals(page: int = Query(1, ge=1), page_size: int = Query(10, ge
 async def my_proposal(submission_id: int, user: Principal = Depends(current_user)):
     row = await db.get_submission(submission_id)
     if not row or row.telegram_id != user.account.telegram_id: fail('not_found', 404)
-    return proposal_out(row)
+    return await proposal_details(row)
 
 
 @router.patch('/me/proposals/{submission_id}', response_model=schema.ProposalOut)
 async def edit_my_proposal(submission_id: int, body: schema.ProposalEdit, user: Principal = Depends(changing_user)):
+    cover = await decode_proposal_cover(body.values.cover_image, user.account.telegram_id)
     error = await db.change_own_submission(submission_id, user.account.telegram_id, body.expected_revision,
-                                           body.values.model_dump(mode='json'))
+                                           body.values.model_dump(mode='json', exclude={'cover_image'}),
+                                           replace_cover='cover_image' in body.values.model_fields_set, cover=cover)
     if error: fail(error, 404 if error == 'not_found' else 422 if error == 'submission_expired' else 409)
-    return proposal_out(await db.get_submission(submission_id))
+    return await proposal_details(await db.get_submission(submission_id))
 
 
 @router.post('/me/proposals/{submission_id}/withdraw', response_model=schema.ProposalOut)
@@ -503,7 +513,7 @@ async def edit_proposal(submission_id: int, body: schema.AdminProposal, user: Pr
     if not await db.get_submission(submission_id): fail('not_found', 404)
     if not await db.edit_submission(submission_id, user.account.telegram_id, body.model_dump(mode='json', exclude={'expected_revision'}), expected_revision=body.expected_revision):
         fail('edit_conflict', 409)
-    return proposal_out(await db.get_submission(submission_id))
+    return await proposal_details(await db.get_submission(submission_id))
 
 
 @router.post('/admin/proposals/{submission_id}/decision', response_model=schema.ProposalOut, tags=['Moderation'])
@@ -531,7 +541,7 @@ install_security(router, current_user=current_user, changing_user=changing_user,
 
 from admin_catalog import install as install_administration
 install_administration(router,current_user=current_user,changing_user=changing_user,require_admin=require_admin,fail=fail)
-install_event_media(router, changing_user=changing_user, require_admin=require_admin, fail=fail)
+install_event_media(router, current_user=current_user, changing_user=changing_user, require_admin=require_admin, fail=fail)
 
 
 def install(app: FastAPI):

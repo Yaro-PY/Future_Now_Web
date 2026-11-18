@@ -3,12 +3,14 @@ import {useApp} from '../context.jsx';
 import {Icon} from '../components/Icons.jsx';
 import {Button, Criteria, DataForm, Empty, Field, Select, Skeletons, Submit} from '../components/Common.jsx';
 import {PageHeading} from '../components/Layout.jsx';
+import {ProposalCoverInput, readCoverFile} from '../components/ProposalCoverInput.jsx';
 import {Pagination} from './Catalog.jsx';
 
 export function ProposalForm({item, owner = false}) {
   const {api, t, options, toast, go, reload, setModal} = useApp();
   const editing = Boolean(item);
   const [conflict, setConflict] = useState(false);
+  const [coverFile, setCoverFile] = useState(undefined);
   const original = item?.payload || {};
   const [draft, setDraft] = useState(() => {
     const criteria = [...(original.criteria || [])];
@@ -25,6 +27,16 @@ export function ProposalForm({item, owner = false}) {
       topics:draft.topics,country:draft.country,city:draft.country === 'ukraine' && draft.city !== 'any' ? draft.city : '',format:draft.format,
       min_age,max_age,deadline:data.get('deadline') ? `${data.get('deadline')}T00:00:00` : null,
       is_free:draft.criteria.includes('free') ? true : draft.criteria.includes('paid') ? false : null,criteria:draft.criteria};
+    if ((!editing || owner) && coverFile !== undefined) {
+      payload.cover_image = null;
+      if (coverFile) {
+        try {
+          payload.cover_image = (await readCoverFile(coverFile)).split(',', 2)[1];
+        } catch {
+          throw new Error(t('coverReadError'));
+        }
+      }
+    }
     if (editing) {
       try {
         if (owner) await api.editProposal(item,payload);
@@ -37,6 +49,8 @@ export function ProposalForm({item, owner = false}) {
     <label className="field full"><span>{t('title')}</span><input name="title" minLength={8} maxLength={150} required defaultValue={original.title || ''} placeholder={t('titlePlaceholder')} /></label>
     <label className="field full"><span>{t('url')}</span><input name="url" type="url" required maxLength={2000} defaultValue={original.url || ''} placeholder="https://" readOnly={editing && !owner} /></label>
     <label className="field full"><span>{t('description')}</span><textarea name="description" minLength={40} maxLength={1500} required defaultValue={original.description || ''} placeholder={t('descriptionPlaceholder')} /></label>
+    {(!editing || owner) && <ProposalCoverInput file={coverFile} existing={item?.cover_url} onChange={setCoverFile} />}
+    {editing && !owner && item.cover_url && <img className="cover-editor-preview full" src={item.cover_url} alt={t('listingCover')} />}
     <Select name="type" label={t('type')} value={draft.type} onChange={value => update('type',value)} excludeAny required /><Select name="country" label={t('country')} value={draft.country} onChange={value => update('country',value)} excludeAny required />
     <div data-city-field hidden={draft.country !== 'ukraine'}><Select name="city" label={t('city')} value={draft.city} onChange={value => update('city',value)} /></div><Select name="format" label={t('format')} value={draft.format} onChange={value => update('format',value)} excludeAny required extra={[{value:'unknown',label:t('unknown')}]} />
     <div className="field"><span>{t('ageRange')} <span className="muted">({t('optional')})</span></span><div className="two-inputs"><input name="min_age" type="number" min="0" max="100" defaultValue={original.min_age ?? ''} aria-label={t('minAge')} placeholder={t('minAge')} /><input name="max_age" type="number" min="0" max="100" defaultValue={original.max_age ?? ''} aria-label={t('maxAge')} placeholder={t('maxAge')} /></div></div>

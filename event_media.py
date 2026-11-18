@@ -1,13 +1,15 @@
 """Public course covers stored separately from source-managed event data."""
 import asyncio
+from base64 import b64decode
+from binascii import Error as Base64Error
 from uuid import UUID, uuid4
 
 from fastapi import Depends, Request, Response
 from sqlalchemy import delete, select
 
 import database as db
-from image_upload import encode_webp, read_image_upload
-from web_auth import reserve_attempt
+from image_upload import MAX_UPLOAD, encode_webp, read_image_upload
+from web_auth import AuthError, reserve_attempt
 
 
 def cover_url(event_id, version):
@@ -28,7 +30,47 @@ def prepare_cover(data):
                        qualities=(84, 72, 60), invalid='cover_invalid', too_large='cover_size')
 
 
-def install(router, *, changing_user, require_admin, fail):
+async def proposal_cover_urls(submission_ids):
+    if not submission_ids:
+        return {}
+    covers = db.submission_covers.c
+    async with db.Session() as session:
+        rows = await session.execute(select(covers.submission_id, covers.version)
+                                     .where(covers.submission_id.in_(submission_ids)))
+        return {item_id: f'/api/v1/proposals/{item_id}/cover/{version}' for item_id, version in rows}
+
+
+async def decode_proposal_cover(value, account_id):
+    if value is None:
+        return None
+    encoded = value.get_secret_value()
+    if len(encoded) > 4 * ((MAX_UPLOAD + 2) // 3):
+        raise AuthError('cover_size', 413)
+    await reserve_attempt(f'proposal-cover:{account_id}', 20)
+    try:
+        original = b64decode(encoded, validate=True)
+    except (Base64Error, ValueError):
+        raise AuthError('cover_invalid', 422) from None
+    return await asyncio.to_thread(prepare_cover, original)
+
+
+def install(router, *, current_user, changing_user, require_admin, fail):
+    @router.get('/proposals/{submission_id}/cover/{version}', tags=['Proposals'])
+    async def download_proposal_cover(submission_id: int, version: UUID, user=Depends(current_user)):
+        if not 0 < submission_id <= 2147483647:
+            fail('not_found', 404)
+        covers = db.submission_covers.c
+        async with db.Session() as session:
+            query = select(covers.content).join(db.Submission, db.Submission.id == covers.submission_id).where(
+                covers.submission_id == submission_id, covers.version == version.hex, db.Submission.status == 'pending')
+            if not db.admin_user(user.account.telegram_id):
+                query = query.where(db.Submission.telegram_id == user.account.telegram_id)
+            content = await session.scalar(query)
+        if content is None:
+            fail('not_found', 404)
+        return Response(content, media_type='image/webp', headers={
+            'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff'})
+
     @router.get('/opportunities/{event_id}/cover/{version}', tags=['Opportunities'])
     async def download(event_id: int, version: UUID):
         if not 0 < event_id <= 2147483647:

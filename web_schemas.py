@@ -160,8 +160,12 @@ class Revision(Input):
     expected_revision: int = Field(ge=1)
 
 
+class ProposalWithCover(Proposal):
+    cover_image: SecretStr | None = None
+
+
 class ProposalEdit(Revision):
-    values: Proposal
+    values: ProposalWithCover
 
 
 class AdminProposal(Proposal):
@@ -301,6 +305,7 @@ class EventPage(BaseModel):
 
 
 class ProposalOut(BaseModel):
+    cover_url: str | None = None
     revision: int
     updated_at: datetime
     id: int

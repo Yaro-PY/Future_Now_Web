@@ -249,6 +249,9 @@ async def _erase_account(account_id, verified=None):
                 await session.flush()
             # Public listings survive; private drafts, proposals, reports and delivery data do not.
             await session.execute(delete(db.Avatar).where(db.Avatar.account_id == account_id))
+            owned_submissions = select(db.Submission.id).where(db.Submission.telegram_id == account_id)
+            await session.execute(db.submission_covers.delete().where(
+                db.submission_covers.c.submission_id.in_(owned_submissions)))
             for model in (db.Saved, db.Subscription, db.Receipt, db.Submission, db.Report, db.User):
                 await session.execute(delete(model).where(model.telegram_id == account_id))
             await session.execute(update(db.Event).where(db.Event.admin_updated_by == account_id).values(admin_updated_by=None))

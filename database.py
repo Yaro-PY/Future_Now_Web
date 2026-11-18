@@ -8,6 +8,7 @@ from uuid import uuid4
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+from pathlib import Path
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, Integer, String, Table, Text, JSON, LargeBinary, ForeignKey, select, inspect, text, func, update, case
@@ -57,6 +58,27 @@ event_covers = Table(
     Column('version', String(32), nullable=False),
     Column('content', LargeBinary, nullable=False),
 )
+
+
+submission_covers = Table(
+    'submission_covers', Base.metadata,
+    Column('submission_id', Integer, ForeignKey('submissions.id', ondelete='CASCADE'), primary_key=True),
+    Column('version', String(32), nullable=False),
+    Column('content', LargeBinary, nullable=False),
+)
+
+# The status transition also runs when the Telegram bot moderates a website proposal.
+SQLITE_FINALIZE_COVER = """
+CREATE TRIGGER IF NOT EXISTS finalize_submission_cover AFTER UPDATE OF status ON submissions
+WHEN OLD.status = 'pending' AND NEW.status IN ('approved', 'rejected', 'withdrawn')
+BEGIN
+    INSERT INTO event_covers (event_id, version, content)
+        SELECT NEW.event_id, version, content FROM submission_covers
+        WHERE submission_id = NEW.id AND NEW.status = 'approved' AND NEW.event_id IS NOT NULL
+        ON CONFLICT (event_id) DO NOTHING;
+    DELETE FROM submission_covers WHERE submission_id = NEW.id;
+END
+"""
 
 
 class Event(Base):
@@ -327,6 +349,11 @@ async def init_db():
             await conn.execute(text('SELECT pg_advisory_xact_lock(:key)'), {'key': lock_key('schema')})
         await conn.run_sync(Base.metadata.create_all)
         await conn.run_sync(_migrate)
+        if engine.dialect.name == 'postgresql':
+            migration = Path(__file__).with_name('migrations') / '005_proposal_covers.sql'
+            await conn.execute(text(migration.read_text(encoding='utf-8')))
+        elif engine.dialect.name == 'sqlite':
+            await conn.execute(text(SQLITE_FINALIZE_COVER))
 
 async def close_db():
     await engine.dispose()
@@ -554,7 +581,7 @@ async def database_ready(require_schema=False):
                            Event.revision, Event.admin_overrides, Event.source_url, Event.admin_updated_at, Event.admin_updated_by,
                            Report.status, Report.review_note, Report.reviewed_by, Report.updated_at, Report.resolved_at, Report.revision, AdminAudit.id,
                            Submission.revision, Submission.updated_at, Account.avatar_revision,
-                           Avatar.account_id, TwoFactor.credential_id, AuthChallenge.token_hash, event_covers.c.version):
+                           Avatar.account_id, TwoFactor.credential_id, AuthChallenge.token_hash, event_covers.c.version, submission_covers.c.version):
                 await session.execute(select(column).limit(1))
 
 
@@ -572,7 +599,7 @@ async def list_submissions(telegram_id=None):
         else: stmt = stmt.where(Submission.status == 'pending')
         return list((await session.scalars(stmt)).all())
 
-async def submit_proposal(telegram_id, payload):
+async def submit_proposal(telegram_id, payload, *, cover=None):
     from hashlib import sha256
     from sqlalchemy.exc import IntegrityError
     from import_events import Opportunity
@@ -600,6 +627,9 @@ async def submit_proposal(telegram_id, payload):
         obj = Submission(telegram_id=telegram_id, fingerprint=fingerprint, payload=validated, created_at=now)
         session.add(obj)
         try:
+            if cover is not None:
+                await session.flush()
+                await write_submission_cover(session, obj.id, cover)
             await session.commit()
         except IntegrityError:
             await session.rollback()
@@ -658,7 +688,17 @@ async def moderate_submission(submission_id, actor, decision, reason='', expecte
         return 'moderation_done'
 
 
-async def change_own_submission(submission_id, actor, expected_revision, payload=None):
+async def write_submission_cover(session, submission_id, content):
+    if content is None:
+        await session.execute(submission_covers.delete().where(submission_covers.c.submission_id == submission_id))
+        return
+    stmt = insert_for(submission_covers).values(submission_id=submission_id, version=uuid4().hex, content=content)
+    await session.execute(stmt.on_conflict_do_update(index_elements=['submission_id'],
+        set_={'version': stmt.excluded.version, 'content': stmt.excluded.content}))
+
+
+async def change_own_submission(submission_id, actor, expected_revision, payload=None, *,
+                                replace_cover=False, cover=None):
     """Author-only compare-and-swap; withdrawn rows retain spam limits and history."""
     from import_events import Opportunity
     from proposals import canonical_url
@@ -693,7 +733,10 @@ async def change_own_submission(submission_id, actor, expected_revision, payload
             Submission.telegram_id == actor, Submission.status == 'pending',
             Submission.revision == expected_revision).values(**values))
         if result.rowcount != 1: return 'edit_conflict'
-        try: await session.commit()
+        try:
+            if validated is not None and replace_cover:
+                await write_submission_cover(session, obj.id, cover)
+            await session.commit()
         except IntegrityError:
             await session.rollback()
             return 'proposal_duplicate'

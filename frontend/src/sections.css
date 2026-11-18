@@ -71,3 +71,4 @@
 .cover-editor h3 { margin: 0; font-size: 14px; }
 .cover-editor-preview { width: min(100%, 320px); aspect-ratio: 16 / 9; object-fit: cover; border-radius: 12px; background: var(--line); }
 .cover-editor .photo-actions { margin: 0; }
+.review-cover { display: block; margin: 0 0 16px; }
