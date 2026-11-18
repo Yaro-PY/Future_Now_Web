@@ -133,6 +133,7 @@ export function AppProvider({children}) {
   useEffect(() => { if (user && ROUTES[route]?.adminOnly && user.role !== 'admin') go('explore'); }, [route,user?.role]);
 
   function go(value) {
+    if (value === 'explore' && route !== 'explore') catalogEntrancePlayed.current = false;
     setModal(null); setMenuOpen(false); setPage(1);
     setCollection(null); setProposalPage(null);
     if (readRoute() === value) { setRoute(value); setRevision(value => value + 1); }
