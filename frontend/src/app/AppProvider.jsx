@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {FutureNowAPI} from '../api.js';
 import {ANY_FILTERS, AppContext} from '../context.jsx';
 import {readRoute, readOpportunityId, opportunityHref, routeHref, moveTo, authReturnPath, ROUTES} from '../routing/routes.js';
@@ -24,6 +24,12 @@ export function AppProvider({children}) {
   const [detailId, setRouteDetailId] = useState(readOpportunityId);
   const [revision, setRevision] = useState(0);
   const favoriteLocks = useRef(new Set());
+  const catalogEntrancePlayed = useRef(false);
+  const claimCatalogEntrance = useCallback(() => {
+    if (catalogEntrancePlayed.current) return false;
+    catalogEntrancePlayed.current = true;
+    return true;
+  }, []);
   const {notification,toast} = useToast();
   const {language,setLanguage,t,date,errorMessage} = useLocale(api);
   const debouncedQuery = useDebouncedValue(query.trim());
@@ -37,6 +43,7 @@ export function AppProvider({children}) {
     else toast(errorMessage(error));
   }
   async function enter(session) {
+    catalogEntrancePlayed.current = false;
     const nextUser = session.user;
     const nextLanguage = nextUser.language;
     api.language = nextLanguage;
@@ -173,7 +180,7 @@ export function AppProvider({children}) {
     api, user, setUser, config, booting, notification, language, t, date, options:(name, excludeAny = false) => (config?.catalogs?.[name] || []).filter(row => !excludeAny || row.value !== 'any'),
     route, go, requestLogin, filters, applyFilters, resetFilters, query, setQuery, submitQuery:() => { setSearchQuery(query.trim()); setPage(1); setRevision(value => value + 1); },
     openAssistantCatalog:values=>{setQuery('');setSearchQuery('');applyFilters(values);go('explore');},
-    page, setPage, collection, collectionError, proposalPage, proposalError, savedCount, menuOpen, setMenuOpen,
+    page, setPage, collection, collectionError, claimCatalogEntrance, proposalPage, proposalError, savedCount, menuOpen, setMenuOpen,
     modal, setModal, detailId, setDetailId, toast, fail, errorMessage, enter, changeLanguage, toggleFavorite, refreshCatalog,
     reload:() => setRevision(value => value + 1), logout:async () => { await api.logout(); clearSession(); },
     accountDeleted:() => { clearSession(); setFilters({...ANY_FILTERS,criteria:[]}); setQuery(''); setSearchQuery(''); toast(t('accountDeleted')); },

@@ -1,9 +1,10 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useLayoutEffect, useState} from 'react';
 import {useApp, imageFor} from '../context.jsx';
 import {Icon} from '../components/Icons.jsx';
 import {AsyncButton, Button, Criteria, DataForm, Empty, Select, Skeletons, Submit} from '../components/Common.jsx';
 import {PageHeading} from '../components/Layout.jsx';
 import {opportunityHref,internalClick} from '../routing/routes.js';
+import './catalog-entrance.css';
 
 export function FilterForm() {
   const {filters, applyFilters, t} = useApp();
@@ -40,6 +41,19 @@ export function Pagination({result}) {
   const {page, setPage, t} = useApp();
   return result.pages > 1 && <div className="pagination"><Button kind="line" action="previous" disabled={page <= 1} onClick={() => setPage(value => value - 1)}>{t('previous')}</Button><span>{t('page',{page,pages:result.pages})}</span><Button kind="line" action="next-page" disabled={page >= result.pages} onClick={() => setPage(value => value + 1)}>{t('nextPage')}</Button></div>;
 }
+function OpportunityGrid({items}) {
+  const {route, claimCatalogEntrance} = useApp();
+  const [animate, setAnimate] = useState(false);
+
+  useLayoutEffect(() => {
+    if (route === 'explore' && claimCatalogEntrance()) setAnimate(true);
+  }, [route, claimCatalogEntrance]);
+
+  return <div className={animate ? 'opportunities-grid catalog-entrance' : 'opportunities-grid'}>
+    {items.map(event => <OpportunityCard key={event.id} event={event} />)}
+  </div>;
+}
+
 function Collection() {
   const {collection, collectionError, route, filters, query, t, reload, resetFilters, go} = useApp();
   if (collectionError) return <Empty title="emptyTitle" text="serviceError" action="reload" actionLabel="retry" onAction={reload} />;
@@ -49,7 +63,7 @@ function Collection() {
     const unrestricted = ['type','age','country','city','format','date'].every(key => !filters[key] || filters[key] === 'any') && !filters.criteria?.length && !query.trim();
     return unrestricted ? <Empty title="catalogEmpty" text="noListings" symbol="spark" action="suggest" actionLabel="suggest" onAction={() => go('suggest')} /> : <Empty title="emptyTitle" text="emptyText" onAction={resetFilters} />;
   }
-  return <><div className="results-caption"><span>{t('resultCount',{count:collection.total})}</span><span className="view-indicator"><Icon name="grid" />{t(route === 'saved' ? 'saved' : 'explore')}</span></div><div className="opportunities-grid">{collection.items.map(event => <OpportunityCard key={event.id} event={event} />)}</div><Pagination result={collection} /></>;
+  return <><div className="results-caption"><span>{t('resultCount',{count:collection.total})}</span><span className="view-indicator"><Icon name="grid" />{t(route === 'saved' ? 'saved' : 'explore')}</span></div><OpportunityGrid items={collection.items} /><Pagination result={collection} /></>;
 }
 export function CatalogPage() {
   const {t, route, query, setQuery, submitQuery, filters, applyFilters, options, resetFilters, setModal} = useApp();
