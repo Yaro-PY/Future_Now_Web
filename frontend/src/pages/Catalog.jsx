@@ -1,10 +1,10 @@
-import {useEffect, useLayoutEffect, useState} from 'react';
+import {useEffect, useState} from 'react';
 import {useApp, imageFor} from '../context.jsx';
 import {Icon} from '../components/Icons.jsx';
 import {AsyncButton, Button, Criteria, DataForm, Empty, Select, Skeletons, Submit} from '../components/Common.jsx';
 import {PageHeading} from '../components/Layout.jsx';
 import {opportunityHref,internalClick} from '../routing/routes.js';
-import './catalog-entrance.css';
+import {useGridEntrance} from '../hooks/useGridEntrance.js';
 
 export function FilterForm() {
   const {filters, applyFilters, t} = useApp();
@@ -42,12 +42,7 @@ export function Pagination({result}) {
   return result.pages > 1 && <div className="pagination"><Button kind="line" action="previous" disabled={page <= 1} onClick={() => setPage(value => value - 1)}>{t('previous')}</Button><span>{t('page',{page,pages:result.pages})}</span><Button kind="line" action="next-page" disabled={page >= result.pages} onClick={() => setPage(value => value + 1)}>{t('nextPage')}</Button></div>;
 }
 function OpportunityGrid({items}) {
-  const {route, claimCatalogEntrance} = useApp();
-  const [animate, setAnimate] = useState(false);
-
-  useLayoutEffect(() => {
-    if (route === 'explore' && claimCatalogEntrance()) setAnimate(true);
-  }, [route, claimCatalogEntrance]);
+  const [animate] = useGridEntrance();
 
   return <div className={animate ? 'opportunities-grid catalog-entrance' : 'opportunities-grid'}>
     {items.map(event => <OpportunityCard key={event.id} event={event} />)}

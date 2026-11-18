@@ -1,24 +1,24 @@
 /* The catalogue reserves the final grid positions before the entrance starts. */
-.catalog-main .opportunities-grid > .opportunity {
+.opportunities-grid > .opportunity {
   animation: none;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .catalog-main .catalog-entrance > .opportunity {
+  :is(.opportunities-grid, .directions-grid).catalog-entrance > :is(.opportunity, .direction-card) {
     --entry-delay: 0ms;
     --entry-offset: -12px;
     --entry-lift: 21px;
     animation: catalog-settle 540ms cubic-bezier(.2, .65, .3, 1) var(--entry-delay) backwards;
   }
 
-  .catalog-entrance > .opportunity:nth-child(even) { --entry-offset: 12px; }
-  .catalog-entrance > .opportunity:nth-child(2) { --entry-delay: 38ms; }
-  .catalog-entrance > .opportunity:nth-child(3) { --entry-delay: 76ms; }
-  .catalog-entrance > .opportunity:nth-child(4) { --entry-delay: 114ms; }
-  .catalog-entrance > .opportunity:nth-child(5) { --entry-delay: 152ms; }
-  .catalog-entrance > .opportunity:nth-child(6) { --entry-delay: 190ms; }
+  .catalog-entrance > :is(.opportunity, .direction-card):nth-child(even) { --entry-offset: 12px; }
+  .catalog-entrance > :is(.opportunity, .direction-card):nth-child(2) { --entry-delay: 38ms; }
+  .catalog-entrance > :is(.opportunity, .direction-card):nth-child(3) { --entry-delay: 76ms; }
+  .catalog-entrance > :is(.opportunity, .direction-card):nth-child(4) { --entry-delay: 114ms; }
+  .catalog-entrance > :is(.opportunity, .direction-card):nth-child(5) { --entry-delay: 152ms; }
+  .catalog-entrance > :is(.opportunity, .direction-card):nth-child(n+6) { --entry-delay: 190ms; }
 
-  .catalog-entrance > .opportunity:focus-within {
+  .catalog-entrance > :is(.opportunity, .direction-card):focus-within {
     opacity: 1 !important;
     transform: none !important;
   }
@@ -40,7 +40,7 @@
 }
 
 @media (prefers-reduced-motion: no-preference) and (max-width: 700px) {
-  .catalog-entrance > .opportunity:nth-child(n) {
+  .catalog-entrance > :is(.opportunity, .direction-card):nth-child(n) {
     --entry-offset: 0px;
     --entry-lift: 13px;
     animation-duration: 440ms;

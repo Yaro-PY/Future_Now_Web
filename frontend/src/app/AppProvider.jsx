@@ -24,10 +24,10 @@ export function AppProvider({children}) {
   const [detailId, setRouteDetailId] = useState(readOpportunityId);
   const [revision, setRevision] = useState(0);
   const favoriteLocks = useRef(new Set());
-  const catalogEntrancePlayed = useRef(false);
-  const claimCatalogEntrance = useCallback(() => {
-    if (catalogEntrancePlayed.current) return false;
-    catalogEntrancePlayed.current = true;
+  const playedGridEntrances = useRef(new Set());
+  const claimGridEntrance = useCallback(page => {
+    if (playedGridEntrances.current.has(page)) return false;
+    playedGridEntrances.current.add(page);
     return true;
   }, []);
   const {notification,toast} = useToast();
@@ -43,7 +43,7 @@ export function AppProvider({children}) {
     else toast(errorMessage(error));
   }
   async function enter(session) {
-    catalogEntrancePlayed.current = false;
+    playedGridEntrances.current.clear();
     const nextUser = session.user;
     const nextLanguage = nextUser.language;
     api.language = nextLanguage;
@@ -133,7 +133,7 @@ export function AppProvider({children}) {
   useEffect(() => { if (user && ROUTES[route]?.adminOnly && user.role !== 'admin') go('explore'); }, [route,user?.role]);
 
   function go(value) {
-    if (value === 'explore' && route !== 'explore') catalogEntrancePlayed.current = false;
+    if (route !== value) playedGridEntrances.current.delete(value);
     setModal(null); setMenuOpen(false); setPage(1);
     setCollection(null); setProposalPage(null);
     if (readRoute() === value) { setRoute(value); setRevision(value => value + 1); }
@@ -181,7 +181,7 @@ export function AppProvider({children}) {
     api, user, setUser, config, booting, notification, language, t, date, options:(name, excludeAny = false) => (config?.catalogs?.[name] || []).filter(row => !excludeAny || row.value !== 'any'),
     route, go, requestLogin, filters, applyFilters, resetFilters, query, setQuery, submitQuery:() => { setSearchQuery(query.trim()); setPage(1); setRevision(value => value + 1); },
     openAssistantCatalog:values=>{setQuery('');setSearchQuery('');applyFilters(values);go('explore');},
-    page, setPage, collection, collectionError, claimCatalogEntrance, proposalPage, proposalError, savedCount, menuOpen, setMenuOpen,
+    page, setPage, collection, collectionError, claimGridEntrance, proposalPage, proposalError, savedCount, menuOpen, setMenuOpen,
     modal, setModal, detailId, setDetailId, toast, fail, errorMessage, enter, changeLanguage, toggleFavorite, refreshCatalog,
     reload:() => setRevision(value => value + 1), logout:async () => { await api.logout(); clearSession(); },
     accountDeleted:() => { clearSession(); setFilters({...ANY_FILTERS,criteria:[]}); setQuery(''); setSearchQuery(''); toast(t('accountDeleted')); },
