@@ -1,35 +1,69 @@
-import {useEffect,useRef,useState} from 'react';
+import {useCallback,useEffect,useRef,useState} from 'react';
 import {useApp} from '../context.jsx';
 import './auth-media.css';
 
 const folder='/assets/media/auth/';
+const soundPreferenceKey = 'future-now.intro-sound';
+
+function soundEnabledByDefault() {
+  try {
+    return localStorage.getItem(soundPreferenceKey) !== 'off';
+  } catch {
+    return true;
+  }
+}
+
 export function useAuthMedia(){
-  const video=useRef(null),audio=useRef(null),alive=useRef(true),wantSound=useRef(false),wantVideo=useRef(!window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const [sound,setSound]=useState(false),[playing,setPlaying]=useState(wantVideo.current),[soundFailed,setSoundFailed]=useState(false),[videoFailed,setVideoFailed]=useState(false);
+  const video=useRef(null),audio=useRef(null),alive=useRef(true),wantVideo=useRef(!window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const [sound,setSound]=useState(soundEnabledByDefault);
+  const wantSound=useRef(sound);
+  const [playing,setPlaying]=useState(wantVideo.current),[soundFailed,setSoundFailed]=useState(false),[videoFailed,setVideoFailed]=useState(false);
+
+  const playSound = useCallback(() => {
+    const music = audio.current;
+    if (!wantSound.current || document.hidden || !music?.paused || music.error) return;
+    // Autoplay can be rejected before user activation. Keep the preference and retry on interaction.
+    music.play().catch(() => {});
+  }, []);
   useEffect(()=>{
     alive.current=true;
     const film=video.current,music=audio.current,preference=window.matchMedia('(prefers-reduced-motion: reduce)');
     music.volume=.35;
     const videoError=()=>{if(alive.current){wantVideo.current=false;setPlaying(false);setVideoFailed(true);}};
-    const audioError=()=>{if(alive.current){wantSound.current=false;setSound(false);setSoundFailed(true);}};
+    const audioError=()=>{if(alive.current)setSoundFailed(true);};
     film.addEventListener('error',videoError);music.addEventListener('error',audioError);
     if(film.error)videoError();if(music.error)audioError();
     const sync=()=>{
       if(document.hidden){film.pause();music.pause();return;}
       if(wantVideo.current)film.play().catch(()=>{if(alive.current&&!document.hidden&&wantVideo.current){wantVideo.current=false;setPlaying(false);}});
-      if(wantSound.current)music.play().catch(()=>{if(alive.current){wantSound.current=false;setSound(false);}});
+      playSound();
     };
     const reduce=event=>{if(event.matches){wantVideo.current=false;film.pause();setPlaying(false);}};
+    const startOnInteraction = event => {
+      if (!event.isTrusted || event.target.closest?.('[data-action=auth-sound]')) return;
+      playSound();
+    };
+    document.addEventListener('click',startOnInteraction,true);
+    document.addEventListener('keydown',startOnInteraction,true);
     document.addEventListener('visibilitychange',sync);preference.addEventListener('change',reduce);sync();
     return ()=>{
       alive.current=false;film.removeEventListener('error',videoError);music.removeEventListener('error',audioError);document.removeEventListener('visibilitychange',sync);preference.removeEventListener('change',reduce);
+      document.removeEventListener('click',startOnInteraction,true);
+      document.removeEventListener('keydown',startOnInteraction,true);
       film.pause();music.pause();film.removeAttribute('src');music.removeAttribute('src');film.load();music.load();
     };
-  },[]);
-  async function toggleSound(){
-    if(wantSound.current){wantSound.current=false;audio.current.pause();setSound(false);return;}
-    try{await audio.current.play();if(alive.current){wantSound.current=true;setSound(true);}}
-    catch{if(alive.current){wantSound.current=false;setSound(false);}}
+  },[playSound]);
+  function toggleSound(){
+    const enabled = !wantSound.current;
+    wantSound.current = enabled;
+    setSound(enabled);
+    try {
+      localStorage.setItem(soundPreferenceKey, enabled ? 'on' : 'off');
+    } catch {
+      // The button continues to work when browser storage is unavailable.
+    }
+    if (enabled) playSound();
+    else audio.current.pause();
   }
   async function toggleVideo(){
     if(wantVideo.current){wantVideo.current=false;video.current.pause();setPlaying(false);return;}
@@ -37,7 +71,7 @@ export function useAuthMedia(){
     catch{if(alive.current)setPlaying(false);}
   }
   return {video,audio,sound,playing,soundFailed,videoFailed,toggleSound,toggleVideo,
-    onAudioError:()=>{wantSound.current=false;setSound(false);setSoundFailed(true);},
+    onAudioError:()=>setSoundFailed(true),
     onVideoError:()=>{wantVideo.current=false;setPlaying(false);setVideoFailed(true);}};
 }
 export function AuthMedia({media}){
