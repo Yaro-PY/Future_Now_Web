@@ -1,4 +1,5 @@
 import {lazy} from 'react';
+import {WelcomePage} from '../pages/Welcome.jsx';
 
 const named = (load, name) => lazy(() => load().then(module => ({default:module[name]})));
 const Catalog = named(() => import('../pages/Catalog.jsx'),'CatalogPage');
@@ -10,6 +11,6 @@ const Proposals = named(() => import('../pages/Proposals.jsx'),'ProposalsPage');
 const Categories = named(() => import('../pages/Categories.jsx'),'CategoriesPage');
 const Help = named(() => import('../pages/Help.jsx'),'HelpPage');
 const Administration = named(() => import('../pages/Administration.jsx'),'AdministrationPage');
-const screens = {explore:Catalog,saved:Catalog,profile:Profile,settings:Settings,about:About,suggest:Suggest,proposals:Proposals,moderation:Administration,categories:Categories,help:Help};
+const screens = {explore:Catalog,saved:Catalog,welcome:WelcomePage,profile:Profile,settings:Settings,about:About,suggest:Suggest,proposals:Proposals,moderation:Administration,categories:Categories,help:Help};
 
 export function PageRouter({route}) { const Page = screens[route] || Catalog; return <Page key={route} />; }

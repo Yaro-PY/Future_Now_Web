@@ -2,6 +2,7 @@ import {useEffect, useState} from 'react';
 import {useApp} from '../context.jsx';
 import {useAuthMedia,AuthMedia,AuthMediaControls} from '../components/AuthMedia.jsx';
 import {LoginSecondFactor} from './Security.jsx';
+import {IntroStory} from '../components/IntroStory.jsx';
 import {Icon, Logo} from '../components/Icons.jsx';
 import {DataForm, Field, LanguageSwitch, Password, Submit} from '../components/Common.jsx';
 
@@ -23,7 +24,7 @@ export function AuthPage() {
   }
   return <div className={`auth-scene ${registering ? 'auth-registration' : ''} ${pending ? 'auth-verification' : ''}`}><AuthMedia media={media}/>
     <header className="auth-header"><a className="brand" href="/#explore" aria-label="Future Now"><Logo /></a><div className="auth-header-tools"><AuthMediaControls media={media}/><LanguageSwitch /></div></header>
-    <main className="auth-grid"><section className="auth-story" aria-labelledby="brand-title"><p className="eyebrow">{t('brandEyebrow')}</p><h1 id="brand-title" className="auth-brand"><span>Future</span><span>Now<span className="brand-dot">.</span></span></h1><h2>{t('authHeadline')}</h2><p className="auth-description">{t('authStory')}</p><button type="button" className="text-button" data-action="how" onClick={() => setModal({type:'how'})}>{t('howItWorks')}<Icon name="arrow" /></button></section>
+    <main className="auth-grid"><IntroStory><button type="button" className="text-button" data-action="how" onClick={() => setModal({type:'how'})}>{t('howItWorks')}<Icon name="arrow" /></button></IntroStory>
       <section className="auth-form-panel" aria-labelledby="auth-title"><h2 id="auth-title">{t(pending ? 'twoFactorLoginTitle' : registering ? 'registerTitle' : 'loginTitle')}</h2><p className="subtext">{t(pending ? 'twoFactorLoginHelp' : registering ? 'registerSubtitle' : 'loginSubtitle')}</p>
         {!pending && <div className="auth-tabs" role="tablist" aria-label={t('login')}>{['login','register'].map(value => <button key={value} type="button" role="tab" aria-selected={mode === value} className={mode === value ? 'active' : ''} data-auth={value} onClick={() => setMode(value)}>{t(value)}</button>)}</div>}
         {pending ? <LoginSecondFactor key={pending.challenge_token} challenge={pending} onCancel={()=>setPending(null)}/> : <DataForm key={mode} className="auth-form" kind="auth" onSubmit={authenticate} onChange={event => { if (['nickname','display_name'].includes(event.target.name)) setDraft(value => ({...value,[event.target.name]:event.target.value})); }}>

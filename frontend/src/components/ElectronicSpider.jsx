@@ -14,8 +14,8 @@ function hiddenThisSession() {
 }
 
 export function ElectronicSpider() {
-  const {language,modal,menuOpen,user}=useApp();
-  const enabled=user?.appearance?.spider_enabled!==false;
+  const {language,modal,menuOpen,user,route}=useApp();
+  const enabled=user?.appearance?.spider_enabled!==false && route!=='welcome';
   const accent=user?.appearance?.accent||'blue';
   const palette={blue:[215,'#2563eb'],lemon:[54,'#a39100'],orange:[26,'#cb600b'],red:[2,'#c33936'],green:[146,'#168354']};
   const assistant=useSiteAssistant();

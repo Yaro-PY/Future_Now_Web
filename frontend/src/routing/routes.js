@@ -4,6 +4,7 @@ export const ROUTES = Object.freeze({
   saved: {title:'saved', group:'discover'},
   suggest: {title:'suggest', group:'community'},
   proposals: {title:'proposals', group:'community'},
+  welcome: {title:'welcome', group:'discover'},
   profile: {title:'profile', group:'account'},
   settings: {title:'settings', group:'account'},
   about: {title:'about', group:'support'},
