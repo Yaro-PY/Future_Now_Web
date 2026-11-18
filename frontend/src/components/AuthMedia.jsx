@@ -5,7 +5,7 @@ import './auth-media.css';
 const folder='/assets/media/auth/';
 const soundPreferenceKey = 'future-now.intro-sound';
 const volumePreferenceKey = 'future-now.intro-volume';
-const defaultVolume = 0.5;
+const defaultVolume = 0.1;
 
 function readVolume() {
   try {
