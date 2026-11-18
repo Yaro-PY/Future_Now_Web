@@ -74,8 +74,8 @@ export function ElectronicSpider() {
   if(hidden||!enabled) return null;
   return <>
     <canvas ref={canvas} className="electronic-spider" aria-hidden="true" />
-    <button type="button" className="sr-only spider-keyboard-access" data-spider-ui data-action="spider-menu" onClick={()=>setPanel('menu')}>{uk?'Відкрити меню павука':'Open spider menu'}</button>
-    {panel==='menu'&&<Dialog id="spider-menu" className="modal spider-menu" title={uk?'Меню павука':'Spider menu'} onClose={()=>setPanel(null)}>
+    <button type="button" className="sr-only spider-keyboard-access" data-spider-ui data-action="spider-menu" onClick={()=>setPanel('menu')}>{uk?'Відкрити меню Гоші':'Open Gosha’s menu'}</button>
+    {panel==='menu'&&<Dialog id="spider-menu" className="modal spider-menu" title={uk?'Гоша помічник':'Gosha the assistant'} onClose={()=>setPanel(null)}>
       <div className="modal-body" data-spider-ui>
         <p>{uk?'Обери, що зробити.':'Choose an action.'}</p>
         <div className="spider-actions">
