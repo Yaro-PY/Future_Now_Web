@@ -1,1 +1,0 @@
-import{M as e,N as t,k as n}from"./index-DcMNgN2I.js";var r=t(e(),1);function i(e=!0){let{route:t,claimGridEntrance:i}=n(),[a,o]=(0,r.useState)(!1);return(0,r.useLayoutEffect)(()=>{e&&i(t)&&o(!0)},[e,t,i]),[a,()=>o(!1)]}export{i as t};

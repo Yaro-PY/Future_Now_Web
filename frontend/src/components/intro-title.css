@@ -1,0 +1,53 @@
+/* Keep every glyph in the layout throughout the animation. */
+.intro-word > .intro-letter {
+  display: inline;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .intro-title {
+    --intro-cycle: 6.4s;
+    --intro-first-hold: 2.8s;
+    --intro-letter-step: 95ms;
+    animation: intro-title-visibility var(--intro-cycle) ease-in-out var(--intro-first-hold) infinite;
+  }
+
+  .intro-word + .intro-word {
+    --intro-word-start: 6;
+  }
+
+  .intro-word > .intro-letter {
+    --intro-delay: calc(var(--intro-first-hold) + (var(--intro-word-start, 0) + var(--intro-letter-index, 0)) * var(--intro-letter-step));
+    animation: intro-letter-reveal var(--intro-cycle) ease-out var(--intro-delay) infinite;
+  }
+
+  .intro-letter:nth-child(2) { --intro-letter-index: 1; }
+  .intro-letter:nth-child(3) { --intro-letter-index: 2; }
+  .intro-letter:nth-child(4) { --intro-letter-index: 3; }
+  .intro-letter:nth-child(5) { --intro-letter-index: 4; }
+  .intro-letter:nth-child(6) { --intro-letter-index: 5; }
+
+  .intro-title .intro-letter > .intro-dot {
+    display: inline-block;
+    transform-origin: 50% 68%;
+    animation: intro-dot-pulse var(--intro-cycle) ease-in-out calc(var(--intro-first-hold) + var(--intro-cycle) * .46) infinite;
+  }
+
+  @keyframes intro-title-visibility {
+    0%, 28%, 100% { opacity: 1; }
+    10%, 25.5% { opacity: 0; }
+  }
+
+  @keyframes intro-letter-reveal {
+    /* The reset is hidden by the title fade, including for the last letter. */
+    0%, 10% { opacity: 1; }
+    10.1%, 28.5% { opacity: 0; }
+    31.5%, 100% { opacity: 1; }
+  }
+
+  @keyframes intro-dot-pulse {
+    /* Start after the dot is typed and finish the last pulse during the fade. */
+    0%, 14%, 28%, 42%, 56%, 64%, 100% { transform: scale(1); }
+    7%, 21%, 35%, 49% { transform: scale(1.24); }
+    60% { transform: scale(1.14); }
+  }
+}
