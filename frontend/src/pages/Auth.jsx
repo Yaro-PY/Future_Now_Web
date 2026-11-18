@@ -1,11 +1,13 @@
 import {useEffect, useState} from 'react';
 import {useApp} from '../context.jsx';
+import {useAuthMedia,AuthMedia,AuthMediaControls} from '../components/AuthMedia.jsx';
 import {LoginSecondFactor} from './Security.jsx';
 import {Icon, Logo} from '../components/Icons.jsx';
 import {DataForm, Field, LanguageSwitch, Password, Submit} from '../components/Common.jsx';
 
 export function AuthPage() {
   const {api, t, language, enter, setModal} = useApp();
+  const media=useAuthMedia();
   const [mode, setMode] = useState('login');
   const [pending, setPending] = useState(null);
   const [draft, setDraft] = useState({nickname:'',display_name:''});
@@ -19,8 +21,8 @@ export function AuthPage() {
     if (session.two_factor_required) { setPending(session); return; }
     await enter(session);
   }
-  return <div className={`auth-scene ${registering ? 'auth-registration' : ''} ${pending ? 'auth-verification' : ''}`}><img className="auth-background" src="/assets/images/earthrise.jpg" alt="" fetchPriority="high" />
-    <header className="auth-header"><a className="brand" href="/#explore" aria-label="Future Now"><Logo /></a><LanguageSwitch /></header>
+  return <div className={`auth-scene ${registering ? 'auth-registration' : ''} ${pending ? 'auth-verification' : ''}`}><AuthMedia media={media}/>
+    <header className="auth-header"><a className="brand" href="/#explore" aria-label="Future Now"><Logo /></a><div className="auth-header-tools"><AuthMediaControls media={media}/><LanguageSwitch /></div></header>
     <main className="auth-grid"><section className="auth-story" aria-labelledby="brand-title"><p className="eyebrow">{t('brandEyebrow')}</p><h1 id="brand-title" className="auth-brand"><span>Future</span><span>Now<span className="brand-dot">.</span></span></h1><h2>{t('authHeadline')}</h2><p className="auth-description">{t('authStory')}</p><button type="button" className="text-button" data-action="how" onClick={() => setModal({type:'how'})}>{t('howItWorks')}<Icon name="arrow" /></button></section>
       <section className="auth-form-panel" aria-labelledby="auth-title"><h2 id="auth-title">{t(pending ? 'twoFactorLoginTitle' : registering ? 'registerTitle' : 'loginTitle')}</h2><p className="subtext">{t(pending ? 'twoFactorLoginHelp' : registering ? 'registerSubtitle' : 'loginSubtitle')}</p>
         {!pending && <div className="auth-tabs" role="tablist" aria-label={t('login')}>{['login','register'].map(value => <button key={value} type="button" role="tab" aria-selected={mode === value} className={mode === value ? 'active' : ''} data-auth={value} onClick={() => setMode(value)}>{t(value)}</button>)}</div>}

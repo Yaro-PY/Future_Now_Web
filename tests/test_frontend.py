@@ -21,6 +21,17 @@ class FrontendTests(APITests):
             self.assertEqual(result.status_code, 200, path)
             self.assertIn(content_type, result.headers['content-type'])
 
+    async def test_intro_media_supports_seekable_ranges_before_login(self):
+        for name,kind in [('lusion-background.mp4','video/mp4'),('cash_cash_ft_tritonal_-_untouchable_extended_mix.mp3','audio/mpeg')]:
+            response=await self.client.get('/assets/media/auth/'+name,headers={'Range':'bytes=0-31'})
+            self.assertEqual(response.status_code,206)
+            self.assertIn(kind,response.headers['content-type'])
+            self.assertEqual(len(response.content),32)
+            self.assertTrue(response.headers['content-range'].startswith('bytes 0-31/'))
+        poster=await self.client.get('/assets/media/auth/lusion-poster.jpg')
+        self.assertEqual(poster.status_code,200)
+        self.assertIn('image/jpeg',poster.headers['content-type'])
+
     async def test_frontend_does_not_replace_api_or_allow_path_traversal(self):
         self.assertEqual((await self.client.get('/api/v1/me')).status_code, 401)
         self.assertEqual((await self.client.get('/assets/%2e%2e/database.py')).status_code, 404)

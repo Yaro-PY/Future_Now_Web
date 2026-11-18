@@ -10,3 +10,5 @@ __pycache__/
 .vercel/
 .idea/
 frontend/node_modules/
+
+public/assets/media/auth/
