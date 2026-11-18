@@ -7,6 +7,7 @@ import web_auth as auth
 import web_schemas as schema
 import two_factor as mfa
 import profile_media as media
+from image_upload import read_image_upload
 
 
 def install(router, *, current_user, changing_user, check_origin, client_bucket,
@@ -67,16 +68,8 @@ def install(router, *, current_user, changing_user, check_origin, client_bucket,
     @router.put('/me/avatar', response_model=schema.UserOut, tags=['Profile'])
     async def upload_avatar(request: Request, user=Depends(changing_user)):
         await auth.reserve_attempt('avatar:' + str(user.account.telegram_id), 20)
-        if request.headers.get('content-type', '').split(';')[0] not in ('image/jpeg', 'image/png', 'image/webp'):
-            raise auth.AuthError('avatar_invalid', 415)
-        try:
-            if int(request.headers.get('content-length', '0')) > media.MAX_UPLOAD: raise auth.AuthError('avatar_size', 413)
-        except ValueError: raise auth.AuthError('avatar_invalid', 422) from None
-        data = bytearray()
-        async for chunk in request.stream():
-            if len(data) + len(chunk) > media.MAX_UPLOAD: raise auth.AuthError('avatar_size', 413)
-            data.extend(chunk)
-        await media.save_avatar(user.account.telegram_id, bytes(data))
+        data = await read_image_upload(request, invalid='avatar_invalid', too_large='avatar_size')
+        await media.save_avatar(user.account.telegram_id, data)
         return user_out(await db.get_account(user.account.telegram_id))
 
     @router.delete('/me/avatar', response_model=schema.UserOut, tags=['Profile'])

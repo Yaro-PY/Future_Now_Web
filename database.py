@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
-from sqlalchemy import BigInteger, Boolean, DateTime, Integer, String, Text, JSON, LargeBinary, ForeignKey, select, inspect, text, func, update, case
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, Integer, String, Table, Text, JSON, LargeBinary, ForeignKey, select, inspect, text, func, update, case
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
@@ -49,6 +49,15 @@ def localnow():
 
 class Base(DeclarativeBase):
     pass
+
+# Website media shares the database while keeping the bot's event model independent.
+event_covers = Table(
+    'event_covers', Base.metadata,
+    Column('event_id', Integer, ForeignKey('events.id', ondelete='CASCADE'), primary_key=True),
+    Column('version', String(32), nullable=False),
+    Column('content', LargeBinary, nullable=False),
+)
+
 
 class Event(Base):
     __tablename__ = 'events'
@@ -545,7 +554,7 @@ async def database_ready(require_schema=False):
                            Event.revision, Event.admin_overrides, Event.source_url, Event.admin_updated_at, Event.admin_updated_by,
                            Report.status, Report.review_note, Report.reviewed_by, Report.updated_at, Report.resolved_at, Report.revision, AdminAudit.id,
                            Submission.revision, Submission.updated_at, Account.avatar_revision,
-                           Avatar.account_id, TwoFactor.credential_id, AuthChallenge.token_hash):
+                           Avatar.account_id, TwoFactor.credential_id, AuthChallenge.token_hash, event_covers.c.version):
                 await session.execute(select(column).limit(1))
 
 

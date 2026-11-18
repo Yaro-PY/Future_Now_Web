@@ -66,3 +66,8 @@
 @media(max-width:600px){.security-method{align-items:flex-start;gap:12px;flex-wrap:wrap}.security-method>div{flex:1;min-width:170px}.security-method p{font-size:12px}.security-method .button{font-size:12px}.security-settings>.subtext{font-size:12px}.security-method .status{font-size:11px}.photo-actions .button{min-height:44px}.totp-qr{width:210px}.security-wizard .field input[name=code]{font-size:20px}.second-factor-form .field select{font-size:16px}.recovery-code-grid{gap:7px}.recovery-code-grid code{font-size:12px;padding:12px 5px;letter-spacing:.3px}.profile-photo-editor .subtext{font-size:11px}}
 
 @media(max-width:700px){.auth-verification .auth-story{display:none}.auth-verification .auth-grid{padding-top:26px}.auth-verification .auth-bot-note{display:none}}
+
+.cover-editor { display: grid; gap: 12px; margin: 20px 0 26px; }
+.cover-editor h3 { margin: 0; font-size: 14px; }
+.cover-editor-preview { width: min(100%, 320px); aspect-ratio: 16 / 9; object-fit: cover; border-radius: 12px; background: var(--line); }
+.cover-editor .photo-actions { margin: 0; }

@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
-import {useApp, imageFor} from '../context.jsx';
+import {useApp} from '../context.jsx';
+import {OpportunityCover} from '../components/OpportunityCover.jsx';
 import {Icon} from '../components/Icons.jsx';
 import {AsyncButton, Button, Criteria, DataForm, Empty, Select, Skeletons, Submit} from '../components/Common.jsx';
 import {PageHeading} from '../components/Layout.jsx';
@@ -33,7 +34,7 @@ export function Price({event}) {
 function OpportunityCard({event}) {
   const {t, date, setDetailId} = useApp();
   return <article className="opportunity"><a href={opportunityHref(event)} className="card-open" data-action="detail" data-id={event.id} aria-label={`${t('details')}: ${event.title}`} onClick={click => {if(internalClick(click)){click.preventDefault();setDetailId(event);}}}>
-    <span className="card-image"><img src={`/assets/images/${imageFor(event)}.jpg`} alt="" loading="lazy" width="600" height="360" /><span className="card-type">{event.event_type_label}</span><span className="card-country"><Icon name="pin" />{event.country_label}</span></span>
+    <span className="card-image"><OpportunityCover event={event} loading="lazy" width="600" height="360" /><span className="card-type">{event.event_type_label}</span><span className="card-country"><Icon name="pin" />{event.country_label}</span></span>
     <span className="card-body"><span className="card-kicker"><span>{event.organizer || event.source}</span><span className="price"><Price event={event} /></span></span><span className="card-title">{event.title}</span><span className="card-tags">{event.tags.slice(0,2).map(tag => <span key={tag.value || tag.label}>{tag.label}</span>)}</span><span className="card-bottom"><span><Icon name="laptop" />{event.format_label}</span><span><Icon name="clock" />{event.is_self_paced && !event.deadline ? t('selfPaced') : date(event.deadline)}</span><Icon name="arrow" className="card-arrow" /></span></span>
   </a><FavoriteButton event={event} />{event.status === 'expired' && <p className="ended-caption">{t('expired')}</p>}</article>;
 }

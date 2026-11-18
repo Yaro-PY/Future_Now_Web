@@ -6,6 +6,7 @@ import database as db
 import web_schemas as schema
 from links import canonical_url, check_link
 from catalog_status import stamp
+from event_media import cover_urls
 
 EDIT_FIELDS = ('title','description','url','event_type','topics','country','city','format',
                'min_age','max_age','start_at','deadline','is_free','price_text','criteria',
@@ -50,7 +51,8 @@ def install(router, *, current_user, changing_user, require_admin, fail):
         require_admin(user)
         row=await db.get_event(event_id)
         if not row: fail('not_found',404)
-        return published_out(row)
+        covers = await cover_urls([event_id])
+        return {**published_out(row), 'cover_url': covers.get(event_id)}
 
     @router.patch('/admin/opportunities/{event_id}', tags=['Administration'])
     async def edit(event_id: int, body: schema.PublishedEdit, user=Depends(changing_user)):

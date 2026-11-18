@@ -1,5 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
-import {useApp,imageFor,safeExternal} from '../context.jsx';
+import {useApp,safeExternal} from '../context.jsx';
+import {OpportunityCover} from '../components/OpportunityCover.jsx';
 import {internalClick,opportunityHref} from '../routing/routes.js';
 import {AsyncButton,Button,Skeletons} from '../components/Common.jsx';
 import {Icon} from '../components/Icons.jsx';
@@ -46,7 +47,7 @@ export function OpportunityPage() {
     <nav className="opportunity-breadcrumb" aria-label={t('details')}>{back}<span>{event.event_type_label}</span></nav>
     <div className="opportunity-layout">
       <article className="opportunity-content">
-        <figure className="opportunity-cover"><img src={`/assets/images/${imageFor(event)}.jpg`} alt="" fetchPriority="high"/><figcaption>{event.event_type_label}</figcaption></figure>
+        <figure className="opportunity-cover"><OpportunityCover event={event} fetchPriority="high"/><figcaption>{event.event_type_label}</figcaption></figure>
         <header className="opportunity-heading"><p className="eyebrow">{event.organizer||event.source}</p><h1 ref={heading} tabIndex={-1}>{event.title}</h1><div className="card-tags">{event.tags.map(tag=><span key={tag.value||tag.label}>{tag.label}</span>)}</div></header>
         <div className={`opportunity-availability ${expired?'is-expired':''}`} role="status"><Icon name="clock"/><span>{t(expired?'expired':event.status==='self_paced'?'selfPaced':event.status==='check_source'?'checkSource':'open')}</span>{expired&&<p>{t('expiredPageNote')}</p>}</div>
         <section className="opportunity-section"><h2>{t('aboutOpportunity')}</h2><p>{event.description||t('unknown')}</p></section>

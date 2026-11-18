@@ -23,6 +23,7 @@ from identity import identity_complete, age_group
 from links import check_link
 from catalog_status import catalog_status
 from opportunity_pages import opportunity_path
+from event_media import cover_urls, install as install_event_media
 
 router = APIRouter(prefix='/api/v1', tags=['Website'])
 SESSION_COOKIE = 'fn_session'
@@ -42,6 +43,8 @@ MESSAGES = {
     'not_found': ('Запис не знайдено.', 'Record not found.'),
     'admin_required': ('Потрібні права адміністратора.', 'Administrator access required.'),
     'account_busy': ('Інша дія ще виконується. Спробуйте знову.', 'Another action is running. Try again.'),
+    'cover_invalid': ('Оберіть зображення JPEG, PNG або WebP до 16 мегапікселів.', 'Choose a still JPEG, PNG or WebP image up to 16 megapixels.'),
+    'cover_size': ('Оберіть обкладинку розміром до 2 МБ.', 'Choose a cover image up to 2 MB.'),
     'invalid_request': ('Перевірте введені дані.', 'Check the submitted fields.'),
     'database_unavailable': ('База даних тимчасово недоступна.', 'The database is temporarily unavailable.'),
     'link_unavailable': ('Посилання зараз недоступне.', 'The link is currently unavailable.'),
@@ -338,13 +341,13 @@ async def event_flags(account_id):
         return saved, subscribed
 
 
-def event_out(event, language, saved, subscribed):
+def event_out(event, language, saved, subscribed, cover_url=None):
     kind = db.LEGACY_TYPES.get(event.event_type, event.event_type)
     if kind not in TYPES: kind = 'other'
     topics = event.topics or db.topics_from_subjects(event.subjects or [])
     url = event.url if ui.safe_url(event.url) else None
     status = db.event_status(event)
-    return schema.EventOut(id=event.id, page_url=opportunity_path(event), title=event.title, description=event.description,
+    return schema.EventOut(id=event.id, page_url=opportunity_path(event), cover_url=cover_url, title=event.title, description=event.description,
         source=event.source, url=url, registration_url=url if status != 'expired' else None,
         event_type=kind, event_type_label=label(TYPES, kind, language), topics=topics,
         tags=[{'value': key, 'label': label(TOPICS, key, language)} for key in topics],
@@ -362,7 +365,9 @@ def event_out(event, language, saved, subscribed):
 
 async def page_events(events, page, page_size, language, account_id=None, applied=None):
     saved, subscribed = await event_flags(account_id)
-    return schema.EventPage(items=[event_out(event, language, saved, subscribed) for event in events[(page - 1) * page_size:page * page_size]],
+    rows = events[(page - 1) * page_size:page * page_size]
+    covers = await cover_urls([event.id for event in rows])
+    return schema.EventPage(items=[event_out(event, language, saved, subscribed, covers.get(event.id)) for event in rows],
                             total=len(events), page=page, page_size=page_size,
                             pages=max(1, math.ceil(len(events) / page_size)), filters=applied)
 
@@ -383,7 +388,8 @@ async def detail(event_id: int, request: Request, user: Principal | None = Depen
     event = await db.get_event(event_id)
     if not event: fail('not_found', 404)
     saved, subscribed = await event_flags(user.account.telegram_id if user else None)
-    return event_out(event, request_language(request), saved, subscribed)
+    covers = await cover_urls([event.id])
+    return event_out(event, request_language(request), saved, subscribed, covers.get(event.id))
 
 
 @router.get('/opportunities/{event_id}/registration')
@@ -525,6 +531,7 @@ install_security(router, current_user=current_user, changing_user=changing_user,
 
 from admin_catalog import install as install_administration
 install_administration(router,current_user=current_user,changing_user=changing_user,require_admin=require_admin,fail=fail)
+install_event_media(router, changing_user=changing_user, require_admin=require_admin, fail=fail)
 
 
 def install(app: FastAPI):

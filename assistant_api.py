@@ -3,6 +3,7 @@ from fastapi import Depends
 from pydantic import Field
 import database as db
 import web_schemas as schema
+from event_media import cover_urls
 from assistant_search import SearchContext, plan, rank, reply, describe, suggestions, choose
 
 class AssistantRequest(schema.Input):
@@ -23,7 +24,8 @@ def install(router,*,changing_user,effective_filters,event_out,event_flags,fail)
             total=len(scored)
             rows=[event for _,event in scored[(context.page-1)*3:context.page*3]]
             saved,subscribed=await event_flags(user.account.telegram_id)
-            results=[event_out(event,user.account.language,saved,subscribed) for event in rows]
+            covers = await cover_urls([event.id for event in rows])
+            results = [event_out(event, user.account.language, saved, subscribed, covers.get(event.id)) for event in rows]
         actions=[]
         if kind=='help': actions.append({'type':'navigate','route':extra['route']})
         if kind=='search' and not context.terms and context.age_min is None and context.level=='any' and not context.self_paced and not context.certificate:

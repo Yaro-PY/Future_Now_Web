@@ -53,8 +53,9 @@ class APITests(unittest.IsolatedAsyncioTestCase):
         self.csrf = response.json()['csrf_token']
         return response
 
-    async def request(self, method, path, **kwargs):
-        return await self.client.request(method, '/api/v1' + path, headers={'X-CSRF-Token': self.csrf}, **kwargs)
+    async def request(self, method, path, *, extra_headers=None, **kwargs):
+        headers = {'X-CSRF-Token': self.csrf, **(extra_headers or {})}
+        return await self.client.request(method, '/api/v1' + path, headers=headers, **kwargs)
 
     async def test_registration_onboarding_language_and_filters(self):
         response = await self.register()

@@ -1,5 +1,8 @@
 """Administration regressions use isolated SQLite and a mocked link checker."""
 from datetime import timedelta
+from io import BytesIO
+
+from PIL import Image
 from unittest.mock import AsyncMock, patch
 from sqlalchemy import select,func,text
 from tests.test_api import APITests,opportunity,ADMIN,PASSWORD
@@ -38,6 +41,55 @@ class AdministrationTests(APITests):
         self.assertEqual(response.status_code,403)
         response=await self.client.patch('/api/v1/admin/reports/1',json={'expected_revision':1,'status':'in_progress'})
         self.assertEqual(response.status_code,403)
+
+    async def test_course_cover_saved_in_db_and_visible_in_all_views(self):
+        await self.admin_login()
+        await self.listing()
+        buffer = BytesIO()
+        Image.new('RGB', (1600, 900), 'blue').save(buffer, format='PNG')
+        data = buffer.getvalue()
+        path = '/admin/opportunities/1/cover'
+        media = {'Content-Type': 'image/png'}
+        response = await self.request('PUT', path, content=data, extra_headers=media)
+        self.assertEqual(response.status_code, 200, response.text)
+        cover_path = response.json()['cover_url']
+        async with db.Session() as session:
+            content = await session.scalar(select(db.event_covers.c.content).where(db.event_covers.c.event_id == 1))
+            self.assertIsNotNone(content)
+            self.assertLess(len(content), len(data))
+        await db.upsert_events([opportunity(1)])
+        await db.save_event(ADMIN, 1)
+        for url in ('/opportunities/1', '/admin/opportunities/1'):
+            self.assertEqual((await self.request('GET', url)).json()['cover_url'], cover_path)
+        self.assertEqual((await self.request('POST', '/opportunities/search', json={})).json()['items'][0]['cover_url'], cover_path)
+        self.assertEqual((await self.request('GET', '/me/favorites')).json()['items'][0]['cover_url'], cover_path)
+        replacement = await self.request('PUT', path, content=data, extra_headers=media)
+        self.assertNotEqual(replacement.json()['cover_url'], cover_path)
+        self.assertEqual((await self.client.get(cover_path)).status_code, 404)
+        cover_path = replacement.json()['cover_url']
+        public_image = await self.client.get(cover_path, headers={'Cookie':''})
+        self.assertEqual(public_image.status_code, 200)
+        self.assertEqual(public_image.headers['content-type'], 'image/webp')
+        with Image.open(BytesIO(public_image.content)) as image:
+            self.assertEqual(image.size, (1440, 810))
+        detail = (await self.request('GET', '/opportunities/1')).json()
+        self.assertIn(cover_path, (await self.client.get(detail['page_url'])).text)
+        self.assertEqual((await self.request('DELETE', path)).status_code, 204)
+        self.assertEqual((await self.client.get(cover_path)).status_code, 404)
+        self.assertIsNone((await self.request('GET', '/opportunities/1')).json()['cover_url'])
+
+    async def test_course_cover_rejects_invalid_uploads_and_non_admins(self):
+        await self.admin_login()
+        await self.listing()
+        path = '/admin/opportunities/1/cover'
+        media = {'Content-Type': 'image/png'}
+        self.assertEqual((await self.client.put('/api/v1' + path, content=b'bad', headers=media)).status_code, 403)
+        self.assertEqual((await self.request('PUT', path, content=b'bad', extra_headers=media)).status_code, 422)
+        self.assertEqual((await self.request('PUT', path, content=b'0' * (2 * 1024 * 1024 + 1), extra_headers=media)).status_code, 413)
+        self.assertEqual((await self.request('PUT', path, content=b'<svg/>', extra_headers={'Content-Type':'image/svg+xml'})).status_code, 415)
+        await self.register()
+        self.assertEqual((await self.request('PUT', path, content=b'bad', extra_headers=media)).status_code, 403)
+        self.assertEqual((await self.request('DELETE', path)).status_code, 403)
 
     async def test_edit_retains_identity_favorites_and_survives_source_refresh(self):
         await self.admin_login(); row=await self.listing(); await db.save_event(ADMIN,row['id'])

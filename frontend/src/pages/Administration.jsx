@@ -5,6 +5,7 @@ import {useDebouncedValue} from '../hooks/useDebouncedValue.js';
 import {Button, DataForm, Dialog, Empty, Field, Select, Skeletons, Submit} from '../components/Common.jsx';
 import {PageHeading} from '../components/Layout.jsx';
 import {Icon} from '../components/Icons.jsx';
+import {CoverEditor} from '../components/OpportunityCover.jsx';
 import {Pagination} from './Catalog.jsx';
 import {ProposalsPage} from './Proposals.jsx';
 
@@ -60,6 +61,7 @@ function PublishedForm({record,conflict,onReload,onSave}){
   await onSave(values);
  }
  return <div className="modal-body"><p className="editor-notice">{t('sourceSafeEdits')}</p>{conflict&&<div className="editor-conflict" role="alert"><p>{t('editConflictText')}</p><Button kind="line" onClick={onReload}>{t('reloadRecord')}</Button></div>}
+ <CoverEditor record={record} />
  <DataForm kind="published" onSubmit={save}><div className="form-grid">
   <Field name="title" label={t('title')} value={original.title} required maxLength={500} className="full"/>
   <Field name="url" label={t('url')} value={original.url} type="url" required maxLength={2000} className="full"/>

@@ -7,6 +7,7 @@ from fastapi import Request
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 
 import database as db
+from event_media import cover_urls
 
 _TRANSLITERATION=str.maketrans(dict(zip(
     'абвгґдеєжзиіїйклмнопрстуфхцчшщьюяыэъё',
@@ -43,7 +44,9 @@ def install(app,static,headers):
         canonical=origin+path
         title=escape(event.title+' — Future Now')
         description=escape(re.sub(r'\s+',' ',event.description or 'Освітні можливості у Future Now.').strip()[:220],quote=True)
-        image=escape(origin+'/assets/images/'+image_name(event)+'.jpg',quote=True)
+        covers = await cover_urls([event_id])
+        image_path = covers.get(event_id) or f'/assets/images/{image_name(event)}.jpg'
+        image = escape(origin + image_path, quote=True)
         html=re.sub(r'<title>.*?</title>',lambda _:f'<title>{title}</title>',html,count=1,flags=re.S)
         html=re.sub(r'<meta name="description"[^>]*>',lambda _:f'<meta name="description" content="{description}">',html,count=1)
         meta=(f'<link rel="canonical" href="{escape(canonical,quote=True)}">'
