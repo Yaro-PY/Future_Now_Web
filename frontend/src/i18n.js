@@ -62,6 +62,7 @@ export const words = {
   accent_blue: ['Синій', 'Blue'], accent_lemon: ['Лимонний', 'Lemon'], accent_orange: ['Помаранчевий', 'Orange'], accent_red: ['Червоний', 'Red'], accent_green: ['Зелений', 'Green'],
   spiderEnabled: ['Показувати павука', 'Show spider'],
   spiderEnabledHelp: ['Якщо вимкнути, павук не з’явиться, доки ти знову не ввімкнеш його тут.', 'When disabled, the spider stays hidden until you enable it here again.'],
+  introVolume: ['Гучність музики', 'Music volume'],
   introSoundOn: ['Увімкнути музику', 'Enable music'], introSoundOff: ['Вимкнути музику', 'Mute music'],
   introVideoPause: ['Зупинити відео', 'Pause video'], introVideoPlay: ['Відтворити відео', 'Play video'],
   introSoundUnavailable: ['Звук недоступний', 'Audio unavailable'], introVideoUnavailable: ['Відео недоступне', 'Video unavailable'],
