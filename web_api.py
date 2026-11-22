@@ -23,7 +23,7 @@ from flow_catalog import CATALOGS, CRITERIA, FIELDS, TOPICS, TYPES, CITIES, COUN
 from identity import identity_complete, age_group
 from links import check_link
 from catalog_status import catalog_status
-from opportunity_pages import opportunity_path
+from opportunity_pages import default_cover_path, opportunity_path
 from event_media import cover_urls, decode_proposal_cover, proposal_cover_urls, install as install_event_media
 
 router = APIRouter(prefix='/api/v1', tags=['Website'])
@@ -351,7 +351,8 @@ def event_out(event, language, saved, subscribed, cover_url=None):
     topics = event.topics or db.topics_from_subjects(event.subjects or [])
     url = event.url if ui.safe_url(event.url) else None
     status = db.event_status(event)
-    return schema.EventOut(id=event.id, page_url=opportunity_path(event), cover_url=cover_url, title=event.title, description=event.description,
+    return schema.EventOut(id=event.id, page_url=opportunity_path(event), cover_url=cover_url, default_cover_url=default_cover_path(event),
+        title=event.title, description=event.description,
         source=event.source, url=url, registration_url=url if status != 'expired' else None,
         event_type=kind, event_type_label=label(TYPES, kind, language), topics=topics,
         tags=[{'value': key, 'label': label(TOPICS, key, language)} for key in topics],

@@ -1,9 +1,8 @@
 // Adapted from the user-provided ElectronicSpider/script.js.
 // Keep its inverse-kinematics tentacles, with one managed animation loop.
-export function startElectronicSpider(canvas,{hue=215,color='#2563eb',followPointer=false}={}) {
+export function startElectronicSpider(canvas,{hue=215,color='#2563eb',roaming=false}={}) {
   const context=canvas.getContext('2d');
   if(!context) return {destroy(){},setPaused(){}};
-  const area=canvas.parentElement;
   const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
   let width=0,height=0,legs=[],frame=0,previousTime=0,lastPaint=0,phase=2.25;
   let stopped=false,paused=false,visible=true;
@@ -99,8 +98,8 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb',followPoin
     const ratio=Math.min(window.devicePixelRatio||1,1.75);
     canvas.width=Math.round(width*ratio);canvas.height=Math.round(height*ratio);
     context.setTransform(ratio,0,0,ratio,0,0);
-    const count=clamp(Math.round(width*height/1350),65,230);
-    const maxLength=clamp(Math.min(width,height)*.49,18,190);
+    const count=clamp(Math.round(width*height/1350),65,roaming?360:230);
+    const maxLength=clamp(Math.min(width,height)*.49,18,roaming?270:190);
     const minLength=Math.min(42,maxLength*.65);
     legs=Array.from({length:count},()=>new Tentacle(Math.random()*width,Math.random()*height,
       Math.random()*(maxLength-minLength)+minLength,18));
@@ -116,7 +115,7 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb',followPoin
     if(time-lastPaint>=interval) {
       const elapsed=Math.min((time-(previousTime||time-interval))/1000,.05);
       previousTime=time;lastPaint=time;
-      const chasing=followPointer&&pointer;
+      const chasing=roaming&&pointer;
       if(!chasing) phase+=elapsed*.8;
       const destination=chasing||patrolDestination();
       const blend=1-Math.exp(-elapsed*(chasing?9:4));
@@ -145,6 +144,7 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb',followPoin
   }
 
   function clearPointer() {pointer=null;}
+  function onPointerOut(event) {if(!event.relatedTarget) clearPointer();}
 
   const resizeObserver=new ResizeObserver(resize);
   const visibilityObserver=new IntersectionObserver(([entry])=>{
@@ -155,10 +155,10 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb',followPoin
   resize();syncAnimation();
   resizeObserver.observe(canvas);
   visibilityObserver.observe(canvas);
-  if(followPointer) {
-    area.addEventListener('pointermove',onPointer,{passive:true});
-    area.addEventListener('pointerleave',clearPointer);
-    area.addEventListener('pointercancel',clearPointer);
+  if(roaming) {
+    window.addEventListener('pointermove',onPointer,{passive:true});
+    window.addEventListener('pointerout',onPointerOut);
+    window.addEventListener('pointercancel',clearPointer);
   }
   window.addEventListener('blur',clearPointer);
   document.addEventListener('visibilitychange',syncAnimation);
@@ -169,9 +169,9 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb',followPoin
     if(frame) cancelAnimationFrame(frame);
     resizeObserver.disconnect();
     visibilityObserver.disconnect();
-    area.removeEventListener('pointermove',onPointer);
-    area.removeEventListener('pointerleave',clearPointer);
-    area.removeEventListener('pointercancel',clearPointer);
+    window.removeEventListener('pointermove',onPointer);
+    window.removeEventListener('pointerout',onPointerOut);
+    window.removeEventListener('pointercancel',clearPointer);
     window.removeEventListener('blur',clearPointer);
     document.removeEventListener('visibilitychange',syncAnimation);
     motion.removeEventListener('change',syncAnimation);

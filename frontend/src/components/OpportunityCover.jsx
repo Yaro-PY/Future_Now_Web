@@ -5,7 +5,7 @@ import {Button} from './Common.jsx';
 export function OpportunityCover({event, ...props}) {
   const [failedUrl, setFailedUrl] = useState(null);
   const customUrl = event.cover_url && event.cover_url !== failedUrl ? event.cover_url : null;
-  return <img {...props} src={customUrl || `/assets/images/${imageFor(event)}.jpg`} alt=""
+  return <img {...props} src={customUrl || event.default_cover_url || `/assets/images/${imageFor(event)}.jpg`} alt=""
     onError={customUrl ? () => setFailedUrl(customUrl) : undefined} />;
 }
 
@@ -42,7 +42,7 @@ export function CoverEditor({record}) {
 
   return <section className="cover-editor" aria-label={t('listingCover')}>
     <h3>{t('listingCover')}</h3>
-    <OpportunityCover className="cover-editor-preview" event={{id:record.id,...record.values,cover_url:coverUrl}} />
+    <OpportunityCover className="cover-editor-preview" event={{id:record.id,...record.values,cover_url:coverUrl,default_cover_url:record.default_cover_url}} />
     <div className="photo-actions">
       <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" aria-label={t('chooseCover')}
         onChange={selectFile} hidden disabled={busy} />

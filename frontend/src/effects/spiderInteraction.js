@@ -1,3 +1,18 @@
+// Only a painted pixel on empty background will open the roaming spider menu.
+const controls = 'a,button,input,select,textarea,label,form,summary,details,dialog,nav,header,footer,' +
+  '[role="button"],[role="link"],[role="menu"],[role="dialog"],[role="tab"],' +
+  '[tabindex]:not([tabindex="-1"]),[contenteditable]:not([contenteditable="false"]),' +
+  '[data-action],[data-form],.opportunity,.search-box,.field';
+const content = 'h1,h2,h3,h4,h5,h6,p,span,strong,small,article,img,svg,picture,video,code,pre,li,dt,dd,hr,progress';
+const backgrounds = new Set(['HTML','BODY','DIV','MAIN','SECTION','ASIDE']);
+
+export function isFreeBackground(target) {
+  return target instanceof Element && backgrounds.has(target.tagName) &&
+    !target.closest(controls) && !target.closest(content) &&
+    ![...target.childNodes].some(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim()) &&
+    getComputedStyle(target).cursor !== 'pointer';
+}
+
 export function isSpiderPixel(canvas,x,y,padding=3) {
   const bounds=canvas.getBoundingClientRect();
   if(!bounds.width||!bounds.height||x<bounds.left||x>=bounds.right||y<bounds.top||y>=bounds.bottom) return false;

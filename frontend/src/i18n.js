@@ -65,7 +65,7 @@ export const words = {
   spiderTurnOff: ['Вимкнути павучка', 'Hide spider'],
   spiderTurnOn: ['Увімкнути павучка', 'Show spider'],
   spiderLudicrous: ['Spider Ludicrous', 'Spider Ludicrous'],
-  spiderLudicrousHelp: ['Гоша біжить за курсором у своїй зоні каталогу.', 'Gosha follows the cursor in his catalogue area.'],
+  spiderLudicrousHelp: ['Гоша біжить за курсором по всьому сайту.', 'Gosha follows the cursor across the site.'],
   introVolume: ['Гучність музики', 'Music volume'],
   introSoundOn: ['Увімкнути музику', 'Enable music'], introSoundOff: ['Вимкнути музику', 'Mute music'],
   introVideoPause: ['Зупинити відео', 'Pause video'], introVideoPlay: ['Відтворити відео', 'Play video'],

@@ -264,6 +264,7 @@ class SessionOut(BaseModel):
 
 class EventOut(BaseModel):
     page_url: str = ''
+    default_cover_url: str = ''
     cover_url: str | None = None
     id: int
     title: str

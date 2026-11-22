@@ -48,7 +48,17 @@ class PublicOpportunityTests(APITests):
         self.assertIn('<title>Python з нуля: основи — Future Now</title>',page.text)
         self.assertIn('property="og:title"',page.text)
         self.assertIn('https://example.org/opportunities/1/python-z-nulya-osnovy',page.text)
-        self.assertIn('property="og:image"',page.text)
+        detail = (await self.client.get('/api/v1/opportunities/1')).json()
+        other = (await self.client.get('/api/v1/opportunities/2')).json()
+        first_asset = detail['default_cover_url']
+        second_asset = other['default_cover_url']
+        self.assertTrue(first_asset.startswith('/assets/images/courses/code-'))
+        self.assertTrue(second_asset.startswith('/assets/images/courses/study-'))
+        for asset in (first_asset, second_asset):
+            image = await self.client.get(asset)
+            self.assertEqual(image.status_code, 200, asset)
+            self.assertEqual(image.headers['content-type'], 'image/jpeg')
+        self.assertIn(f'property="og:image" content="https://example.org{first_asset}"', page.text)
         self.assertIn('frame-ancestors',page.headers['content-security-policy'])
         self.assertIn('/assets/react/bundles/',page.text)
         self.assertEqual(page.headers['cache-control'],'no-cache')

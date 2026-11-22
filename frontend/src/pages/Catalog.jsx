@@ -65,7 +65,7 @@ function Collection() {
 }
 export function CatalogPage() {
   const {t, route, user, query, setQuery, submitQuery, filters, applyFilters, options, resetFilters, setModal} = useApp();
-  const showSpider = user?.appearance?.spider_enabled !== false;
+  const showSpider = user?.appearance?.spider_enabled !== false && user?.appearance?.spider_ludicrous !== true;
   if (route === 'saved') return <main className="page" id="main-content"><PageHeading title="savedTitle" subtitle="savedSubtitle" /><section id="collection"><Collection /></section></main>;
   return <main className="page" id="main-content"><PageHeading title="discoverTitle" subtitle="discoverSubtitle" />
     <div className={showSpider ? 'catalog-content has-spider' : 'catalog-content'}>

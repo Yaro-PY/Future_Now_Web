@@ -19,7 +19,7 @@ dialog::backdrop {
 }
 
 /* The account menu is an existing non-modal pop-up. Keep its own content clear. */
-body:has(.profile-menu):not(:has(dialog[open])) #app > :is(.app-view, .page-footer, .mobile-nav, #toast),
+body:has(.profile-menu):not(:has(dialog[open])) #app > :is(.app-view, .page-footer, .mobile-nav, .spider-roaming, #toast),
 body:has(.profile-menu):not(:has(dialog[open])) .app-header > :is(.brand, .main-nav),
 body:has(.profile-menu):not(:has(dialog[open])) .header-actions > :is(.language-switch, .separator, .icon-button),
 body:has(.profile-menu):not(:has(dialog[open])) .header-profile {

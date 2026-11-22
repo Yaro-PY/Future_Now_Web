@@ -20,12 +20,47 @@ def opportunity_path(event):
     return f'/opportunities/{event.id}/{slug}'
 
 
+COURSE_PHOTOS = {
+    'code': ('code-desk', 'code-blue', 'code-workspace', 'code-pair'),
+    'writing': ('writing-notebook', 'study-books', 'study-library'),
+    'study': ('writing-notebook', 'study-group', 'study-books', 'study-library'),
+    'art': ('art-palette', 'art-table'),
+    'business': ('business-data', 'business-team'),
+    'science': ('science-circuits', 'science-lab', 'science-workshop'),
+    'media': ('media-camera', 'media-studio', 'media-production'),
+}
+COURSE_TITLE_TOPICS = (
+    ('science', re.compile(r'\b(?:stem|steam|стем|стеам)\b|робототехн|лаборатор')),
+    ('code', re.compile(r'\b(?:web|linux|kubernetes|cs50|python)\b|програмуван|кібер|інформатик')),
+    ('writing', re.compile(r'чита|письм|есе|літератур|мови|essay|\bclil\b')),
+)
+COURSE_TAG_TOPICS = (
+    ('it', 'code'), ('art', 'art'), ('media', 'media'),
+    ('business', 'business'), ('leadership', 'business'),
+)
+
+
+def course_photo_name(event):
+    title = event.title.casefold()
+    theme = next((theme for theme, pattern in COURSE_TITLE_TOPICS if pattern.search(title)), None)
+    if theme is None:
+        tags = event.topics or db.topics_from_subjects(event.subjects or [])
+        theme = next((theme for tag, theme in COURSE_TAG_TOPICS if tag in tags), 'study')
+    photos = COURSE_PHOTOS[theme]
+    return 'courses/' + photos[event.id % len(photos)]
+
+
 def image_name(event):
-    if event.event_type=='grant': return 'earthrise'
-    if event.event_type in ('exchange','international','ukrainian','program'): return 'campus'
-    if event.event_type in ('hackathon','internship') or 'it' in (event.topics or []): return 'technology'
-    if event.event_type=='course': return ('technology','community','campus')[event.id%3]
+    kind = db.LEGACY_TYPES.get(event.event_type, event.event_type)
+    if kind == 'course': return course_photo_name(event)
+    if kind == 'grant': return 'earthrise'
+    if kind in ('exchange', 'international', 'ukrainian', 'program'): return 'campus'
+    if kind in ('hackathon', 'internship') or 'it' in (event.topics or []): return 'technology'
     return 'community'
+
+
+def default_cover_path(event):
+    return f'/assets/images/{image_name(event)}.jpg'
 
 
 def install(app,static,headers):
@@ -45,7 +80,7 @@ def install(app,static,headers):
         title=escape(event.title+' — Future Now')
         description=escape(re.sub(r'\s+',' ',event.description or 'Освітні можливості у Future Now.').strip()[:220],quote=True)
         covers = await cover_urls([event_id])
-        image_path = covers.get(event_id) or f'/assets/images/{image_name(event)}.jpg'
+        image_path = covers.get(event_id) or default_cover_path(event)
         image = escape(origin + image_path, quote=True)
         html=re.sub(r'<title>.*?</title>',lambda _:f'<title>{title}</title>',html,count=1,flags=re.S)
         html=re.sub(r'<meta name="description"[^>]*>',lambda _:f'<meta name="description" content="{description}">',html,count=1)
