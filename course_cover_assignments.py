@@ -1,0 +1,53 @@
+"""Individual stock covers keyed by the catalogue listing identity."""
+
+COURSE_COVER_NAMES = {
+    '3cda1724738dce2a04565df06bdfc1d61d354adcc083ec400324df78f9952591': 'science-circuits',  # Course 17
+    '92aa064b89bf3c0ea34fa6d4b157545196902313d5aaca8873140b69c9f302b8': 'code-desk',  # Course 26
+    '1506afb65ce7c6002b91300693bf3fe54e1801d7983cdb2badb59e28322bcffc': 'study-library',  # Course 40
+    '251fa44b50135b491f26b861217aadf48a308c004926f476f2fe7ab4ffb6babb': 'writing-notebook',  # Course 42
+    '072db6ef3e222f92b7e8ffc0f610ae5c87a5bfc42ad838eb1f9ebc40486acdfb': 'math-chalkboard',  # Course 43
+    'db9988588f8e534a978680eeec54a49ae3375105d6fb93aee9b80fff8428cc91': 'geometry-rulers',  # Course 44
+    '6ea6b7f1ffeca152095d14806d71e783421d958d6d62ee4a9a87b40d3ce5fd28': 'business-data',  # Course 45
+    'c9c47325cb918f12062f5d1d30ebcdca29e10c3017b5259ad3c16b47fe492595': 'math-exhibit',  # Course 46
+    'f7caf1cc0c0d78eb7089b9cce327ddc6637a1bb41e680ab0dbb8644d9f639544': 'art-palette',  # Course 47
+    'a6b10123361061ff55062b89c79fb2659b1a002e458dbdc084c1d5ce51d368f5': 'graph-whiteboard',  # Course 48
+    '3b227b5d9fdc9997dbc8df2085f485efb9f0a00a562c5cc4d84ec7debc09b64e': 'study-books',  # Course 49
+    '57181e5b832275ee39e8c12bcbdf2b124ff972782395e7b63be9bbe91fba80ab': 'syntax-notes',  # Course 50
+    '6a35ffade56a909617516bb033ebe58429d64e003b14d0d1c2986ea27354ce52': 'art-table',  # Course 51
+    'd65736b1909c2741750e89dc59cc7d535d2ecc5dab579fe1e9816c500365f072': 'ukrainian-history',  # Course 52
+    '33650e9e6db83ded6c9df7169914083560d3b6c018707e04b96ed131363b2ec8': 'science-lab',  # Course 53
+    'b81298ad17364b7d9399930cc75b6d16ec4d46cb546dfc038d7b55972703182b': 'literature-reading',  # Course 54
+    '150b08badc505704bd212dd3444d96c73cf259f34a5303c7e7d10d877ccf5276': 'exam-preparation',  # Course 55
+    '9ec78a9e49bb9ca4b336686a4ec8aefe6977a24865a74926cc6b8f09802b75d2': 'study-group',  # Course 56
+    'f56271a4bef58b2c1fd278c723f7075e5b1454e9ba39a3cabf6b7eca170f0410': 'architecture-lines',  # Course 57
+    '7b5d009e59074ea8195a8ea6a177242d25c0d17cb3642969365a2a603fd5e662': 'world-through-animals',  # Course 60
+    '2dfcb77f0b61b4e9b01eae5af05711d6ef57b34128699852de07c4919ee50915': 'futurum-classroom',  # Course 61
+    '8fc98d27163c7295850c2756032acd848fae9a28c1257145671ef8e6359b4d3c': 'math-proof',  # Course 62
+    'ec4faad7c13431fa0b8aff10a8d0451bef62c34baebf5bae1a22e3a6f99ba65c': 'code-workspace',  # Course 437
+    '7e795de09a5838be07a818e902e524b37ea117e2969d58ea678056a141a512e8': 'code-blue',  # Course 438
+    '48fae6e43f858cfc6016f84769fd4903989314b7ce51dd7719241470828c63cd': 'code-pair',  # Course 439
+    'c6c2c955de63f0887a6b56660a840ba99266629d1b599bf06bf5251fb040af43': 'business-team',  # Course 440
+    '88907d40503b0ccfb6ca24fdb4e9544a847d535b0493e61b9c5abafdd3c6b2eb': 'kubernetes-servers',  # Course 441
+    'd800438a6eb9228343171c9158f67e28999e0118cfe911c363841d8480a62da9': 'situation-management',  # Course 442
+    '74ea21e765921933a27643662c40511e574899d25b7b5baad7f605689f180e6c': 'business-english',  # Course 443
+    'd9dd844271aafc09adf4a05c4e9d646dd5d7cf55527a9d6d1f6f1dbc17072270': 'career-english',  # Course 444
+    'e4392758b75f6411fa7bdb0239dc550cc3384d518df1ddfeb3706c0b703ec303': 'media-camera',  # Course 445
+    'e0e5ee30dc5be9df6a46d684c3b7d544c7788c1aa05c916cada989a79ec0aa61': 'media-studio',  # Course 446
+    'ac98db3b775939415d02431cf99cb10f724f47ef65611a726b2a331d2f1f3bb9': 'science-workshop',  # Course 447
+    'acf1f82b8977f14609e715c0650aafb7111afd93c5c81fbeac234509127abab1': 'remote-learning',  # Course 448
+    '221b7e151875162278aa933da8d890a9455980b7ee07722dfe1518a1cca3257f': 'equality-and-inclusion',  # Course 449
+    '819f9903b6756af789e6f8bc378e1ebcb82ea53e8eed05321db4f9894e3595c6': 'community-integration',  # Course 450
+    '998aae1cf5deebcd1db655c1bd16c55e8e8465394ea840c20997b5140b6f3028': 'community-services',  # Course 451
+    '16a4988416185fda0763d756668be2e8e9d62872c02a1d4101b0c2bdb3b3c1db': 'public-service-ai',  # Course 452
+    'e7ebab031466466f6ee9cd45bd6a40d5c5a8c139600f2e18aa9267c6269c5770': 'community-resilience',  # Course 453
+    '67f94385cab051a4569583052ccb807a58959144eb35181c174048871661d0dc': 'calm-and-breathing',  # Course 454
+    'ef3687a2a764efdd4f68c013b24a27b33e0ee16f0268c3d246176fc7e78413b8': 'pride-and-inclusion',  # Course 455
+    '5130c4a67c8d6a965399b3aad467cbf436337f3c35ea7702f489c6c4edf711c6': 'digital-safety',  # Course 456
+    '1c57f764c48c6925df274140be6a2edbb2dcfa4d5fb8835341f33c3b5cb7ff37': 'public-procurement',  # Course 457
+    'ec5e968d20dbcd5ec8ba4435a2ec1fd1cb49cf2fbcc04eb540d18af06d966cc7': 'health-rehabilitation',  # Course 458
+    '2c040be8875eff9b823dd9b70d48777b29180f1585ece0b3713b5388b7077be2': 'bicycle-delivery',  # Course 459
+    '8e17eda9be6a8fd16f82a4d33afd12348870aeeb65a2467371af512c2ca36cfb': 'sales-representative',  # Course 460
+    'f8a7db47be142960712452b1ad1c816fa0a9bd479a3a49869896bda327639dc7': 'child-rights',  # Course 1561
+    '4c1b98015aca244e0bd5f3d081e411ead7dfa93cce6e276aefcaade9c9a23d8b': 'digital-steam-workshop',  # Course 1653
+    '6f015e7c1fa52e370922e8573c75494d40dd76d0189be353fa58604c38a873ae': 'essay-draft',  # Course 2226
+}

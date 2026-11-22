@@ -7,6 +7,7 @@ from fastapi import Request
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 
 import database as db
+from course_cover_assignments import COURSE_COVER_NAMES
 from event_media import cover_urls
 
 _TRANSLITERATION=str.maketrans(dict(zip(
@@ -41,6 +42,10 @@ COURSE_TAG_TOPICS = (
 
 
 def course_photo_name(event):
+    assigned = COURSE_COVER_NAMES.get(event.external_id)
+    if assigned:
+        return 'courses/' + assigned
+
     title = event.title.casefold()
     theme = next((theme for theme, pattern in COURSE_TITLE_TOPICS if pattern.search(title)), None)
     if theme is None:

@@ -1,9 +1,12 @@
 """Public listing visibility, stable deep links, metadata and private-action boundaries."""
 from datetime import timedelta
+from hashlib import sha256
+from pathlib import Path
 from unittest.mock import AsyncMock,patch
 
 import database as db
 from tests.test_api import APITests,opportunity
+from course_cover_assignments import COURSE_COVER_NAMES
 from opportunity_pages import opportunity_path
 
 
@@ -62,6 +65,25 @@ class PublicOpportunityTests(APITests):
         self.assertIn('frame-ancestors',page.headers['content-security-policy'])
         self.assertIn('/assets/react/bundles/',page.text)
         self.assertEqual(page.headers['cache-control'],'no-cache')
+
+    async def test_individual_course_covers_are_unique_and_follow_listing_identity(self):
+        self.assertTrue(COURSE_COVER_NAMES)
+        folder = Path(__file__).resolve().parents[1] / 'static' / 'images' / 'courses'
+        hashes = {sha256((folder / f'{asset}.jpg').read_bytes()).digest()
+                  for asset in COURSE_COVER_NAMES.values()}
+        self.assertEqual(len(hashes), len(COURSE_COVER_NAMES))
+
+        identity, asset = next(iter(COURSE_COVER_NAMES.items()))
+        event = opportunity(1, external_id=identity)
+        await db.upsert_events([event])
+        cover = f'/assets/images/courses/{asset}.jpg'
+        for title in ('Course before source refresh', 'New course title from source'):
+            event.title = title
+            await db.upsert_events([event])
+            listing = (await self.client.get('/api/v1/opportunities/1')).json()
+            self.assertEqual(listing['default_cover_url'], cover)
+            page = await self.client.get(listing['page_url'])
+            self.assertIn(f'property="og:image" content="https://example.org{cover}"', page.text)
 
     async def test_old_slugs_resolve_by_id_after_title_change(self):
         await self.seed()
