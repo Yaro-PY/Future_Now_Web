@@ -2,6 +2,7 @@
 import hmac
 import math
 import os
+from contextlib import nullcontext
 from dataclasses import dataclass
 from datetime import timezone
 from urllib.parse import urlsplit
@@ -318,17 +319,20 @@ async def update_filters(body: schema.Filters, user: Principal = Depends(changin
 
 @router.patch('/me/settings', response_model=schema.UserOut)
 async def settings(body: schema.Settings, request: Request, user: Principal = Depends(changing_user)):
-    account = user.account
-    if body.language is not None: account.language = body.language
-    if body.notifications is not None:
-        prefs = body.notifications.model_dump()
-        if prefs['new'] and not account.notifications.get('new'): account.notification_since = db.utcnow()
-        account.notifications = {**account.notifications, **prefs}
-    if body.appearance is not None:
-        current=appearance_out(account).model_dump()
-        current.update(body.appearance.model_dump(exclude_none=True))
-        account.notifications={**account.notifications,'_appearance':current}
-    await db.save_account(account)
+    local_lock = db._profile_write_lock if db.engine.dialect.name == 'sqlite' else nullcontext()
+    async with local_lock, db.Session() as session:
+        account = await session.get(db.Account, user.account.telegram_id, with_for_update=True)
+        if not account: fail('authentication_required', 401)
+        if body.language is not None: account.language = body.language
+        if body.notifications is not None:
+            prefs = body.notifications.model_dump()
+            if prefs['new'] and not account.notifications.get('new'): account.notification_since = db.utcnow()
+            account.notifications = {**account.notifications, **prefs}
+        if body.appearance is not None:
+            current = appearance_out(account).model_dump()
+            current.update(body.appearance.model_dump(exclude_none=True))
+            account.notifications = {**account.notifications, '_appearance': current}
+        await session.commit()
     request.state.language = account.language
     return user_out(account)
 

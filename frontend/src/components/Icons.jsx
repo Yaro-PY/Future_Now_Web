@@ -1,6 +1,7 @@
 import React from 'react';
 
 const shapes = {
+  spider: <><path d="M9 10 6 8 4 4M8 12 4 11 2 8M8 14 4 15 2 18M9 16 6 18 4 21M15 10l3-2 2-4M16 12l4-1 2-3M16 14l4 1 2 3M15 16l3 2 2 3" /><circle cx="12" cy="8" r="2.5" /><ellipse cx="12" cy="14" rx="4" ry="4.5" /></>,
   refresh: <><path d="M20 7v5h-5M4 17v-5h5" /><path d="M6.2 7a7 7 0 0 1 11.6-1L20 9M4 15l2.2 3A7 7 0 0 0 18 17" /></>,
   arrow: <path d="M4 12h16m-6-6 6 6-6 6" />,
   external: <path d="M8 5H5v14h14v-3M12 4h8v8M10 14 20 4" />,

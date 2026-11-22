@@ -2,8 +2,8 @@ import {lazy, Suspense} from 'react';
 import {useApp} from '../context.jsx';
 import {Header, Footer, MobileNav} from '../components/Layout.jsx';
 import {PageRouter} from '../routing/PageRouter.jsx';
-import {ElectronicSpider} from '../components/ElectronicSpider.jsx';
 import {LiquidGlass} from '../components/LiquidGlass.jsx';
+import {SiteAssistantSession} from '../components/SiteAssistantSession.jsx';
 
 const Auth = lazy(() => import('../pages/Auth.jsx').then(module => ({default:module.AuthPage})));
 const Opportunity = lazy(() => import('../pages/Opportunity.jsx').then(module => ({default:module.OpportunityPage})));
@@ -17,5 +17,5 @@ export function AppShell() {
   else if(route==='opportunity') content=<><Header/><div className="app-view" data-route={route}><Suspense fallback={<LoadingScreen/>}><Opportunity key={detailId}/></Suspense></div><Footer/>{user&&<MobileNav/>}</>;
   else if (!user) content = <Suspense fallback={<LoadingScreen />}><Auth /></Suspense>;
   else content = <><Header /><div className="app-view" data-route={route}><Suspense fallback={<LoadingScreen />}><PageRouter route={route} /></Suspense></div><Footer /><MobileNav /></>;
-  return <><LiquidGlass/>{user && !booting && <ElectronicSpider />}{content}<Suspense fallback={null}>{modal && <ModalContent key={modal.type + (modal.item?.id || '')} />}</Suspense><div id="toast" className={`toast ${notification ? 'visible' : ''}`} role="status" aria-live="polite">{notification?.message || ''}</div></>;
+  return <><LiquidGlass/>{user && !booting ? <SiteAssistantSession>{content}</SiteAssistantSession> : content}<Suspense fallback={null}>{modal && <ModalContent key={modal.type + (modal.item?.id || '')} />}</Suspense><div id="toast" className={`toast ${notification ? 'visible' : ''}`} role="status" aria-live="polite">{notification?.message || ''}</div></>;
 }

@@ -1,13 +1,14 @@
 // Adapted from the user-provided ElectronicSpider/script.js.
 // Keep its inverse-kinematics tentacles, with one managed animation loop.
-export function startElectronicSpider(canvas,{hue=215,color='#2563eb'}={}) {
+export function startElectronicSpider(canvas,{hue=215,color='#2563eb',followPointer=false}={}) {
   const context=canvas.getContext('2d');
   if(!context) return {destroy(){},setPaused(){}};
+  const area=canvas.parentElement;
   const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
   let width=0,height=0,legs=[],frame=0,previousTime=0,lastPaint=0,phase=2.25;
-  let stopped=false,paused=false,ready=false;
+  let stopped=false,paused=false,visible=true;
   const target={x:0,y:0},lastTarget={x:0,y:0};
-  const pointer={x:0,y:0,at:-Infinity};
+  let pointer=null;
   const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
   const clamp=(value,low,high)=>Math.min(high,Math.max(low,value));
 
@@ -79,70 +80,102 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb'}={}) {
     lastTarget.x=target.x;lastTarget.y=target.y;
   }
 
+  function patrolDestination() {
+    return {
+      x:width*(.5+.34*Math.sin(phase)),
+      y:height*(.5+.37*Math.cos(phase*1.45)),
+    };
+  }
+
   function resize() {
-    width=window.innerWidth;height=window.innerHeight;
+    const nextWidth=canvas.clientWidth,nextHeight=canvas.clientHeight;
+    if(!nextWidth||!nextHeight) return;
+    const initial=width===0;
+    if(!initial) {
+      target.x*=nextWidth/width;
+      target.y*=nextHeight/height;
+    }
+    width=nextWidth;height=nextHeight;pointer=null;
     const ratio=Math.min(window.devicePixelRatio||1,1.75);
     canvas.width=Math.round(width*ratio);canvas.height=Math.round(height*ratio);
     context.setTransform(ratio,0,0,ratio,0,0);
-    const mobile=width<600,count=mobile?200:420,segments=mobile?18:24;
-    const maxLength=Math.min(mobile?160:300,height*.42);
+    const count=clamp(Math.round(width*height/1350),65,230);
+    const maxLength=clamp(Math.min(width,height)*.49,18,190);
+    const minLength=Math.min(42,maxLength*.65);
     legs=Array.from({length:count},()=>new Tentacle(Math.random()*width,Math.random()*height,
-      Math.random()*(maxLength-45)+45,segments));
-    target.x=ready?clamp(target.x,0,width):width*.18;
-    target.y=ready?clamp(target.y,0,height):height*.48;
-    lastTarget.x=target.x;lastTarget.y=target.y;ready=true;
+      Math.random()*(maxLength-minLength)+minLength,18));
+    if(initial) Object.assign(target,patrolDestination());
+    Object.assign(lastTarget,target);
     paint();
   }
 
   function animate(time) {
     frame=0;
-    if(stopped||paused||document.hidden||motion.matches) return;
-    const interval=1000/(width<600?30:45);
+    if(stopped||paused||!visible||document.hidden||motion.matches) return;
+    const interval=1000/45;
     if(time-lastPaint>=interval) {
       const elapsed=Math.min((time-(previousTime||time-interval))/1000,.05);
-      previousTime=time;lastPaint=time;phase+=elapsed*.4;
-      let destination;
-      if(time-pointer.at<1600) destination=pointer;
-      else {
-        const sine=Math.sin(phase),denominator=1+sine*sine;
-        destination={x:width/2+(width*.39*Math.cos(phase))/denominator,
-          y:height/2+(height*.64*Math.cos(phase)*sine)/denominator};
-      }
-      const blend=1-Math.exp(-elapsed*6);
+      previousTime=time;lastPaint=time;
+      const chasing=followPointer&&pointer;
+      if(!chasing) phase+=elapsed*.8;
+      const destination=chasing||patrolDestination();
+      const blend=1-Math.exp(-elapsed*(chasing?9:4));
       target.x+=(clamp(destination.x,12,width-12)-target.x)*blend;
       target.y+=(clamp(destination.y,12,height-12)-target.y)*blend;
       paint();
     }
     frame=requestAnimationFrame(animate);
   }
+
   function syncAnimation() {
     if(frame) cancelAnimationFrame(frame);
     frame=0;previousTime=0;lastPaint=0;
-    if(!document.hidden&&!motion.matches&&!stopped&&!paused) frame=requestAnimationFrame(animate);
-    else if(!document.hidden&&!stopped) paint();
+    if(!document.hidden&&visible&&!motion.matches&&!stopped&&!paused) frame=requestAnimationFrame(animate);
   }
+
   function onPointer(event) {
-    if(event.pointerType==='touch'||motion.matches) return;
-    pointer.x=event.clientX;pointer.y=event.clientY;pointer.at=performance.now();
+    if(event.pointerType==='touch'||motion.matches||paused) return;
+    const bounds=canvas.getBoundingClientRect();
+    if(bounds.width&&bounds.height) {
+      pointer={
+        x:(event.clientX-bounds.left)*width/bounds.width,
+        y:(event.clientY-bounds.top)*height/bounds.height,
+      };
+    }
   }
-  function onExit(event) {if(!event.relatedTarget) pointer.at=-Infinity;}
-  function onBlur() {pointer.at=-Infinity;}
+
+  function clearPointer() {pointer=null;}
+
+  const resizeObserver=new ResizeObserver(resize);
+  const visibilityObserver=new IntersectionObserver(([entry])=>{
+    visible=entry.isIntersecting;
+    if(!visible) clearPointer();
+    syncAnimation();
+  });
   resize();syncAnimation();
-  window.addEventListener('resize',resize,{passive:true});
-  window.addEventListener('pointermove',onPointer,{passive:true});
-  window.addEventListener('pointerout',onExit,{passive:true});
-  window.addEventListener('blur',onBlur);
+  resizeObserver.observe(canvas);
+  visibilityObserver.observe(canvas);
+  if(followPointer) {
+    area.addEventListener('pointermove',onPointer,{passive:true});
+    area.addEventListener('pointerleave',clearPointer);
+    area.addEventListener('pointercancel',clearPointer);
+  }
+  window.addEventListener('blur',clearPointer);
   document.addEventListener('visibilitychange',syncAnimation);
   motion.addEventListener('change',syncAnimation);
+
   function destroy() {
     stopped=true;
     if(frame) cancelAnimationFrame(frame);
-    window.removeEventListener('resize',resize);
-    window.removeEventListener('pointermove',onPointer);
-    window.removeEventListener('pointerout',onExit);
-    window.removeEventListener('blur',onBlur);
+    resizeObserver.disconnect();
+    visibilityObserver.disconnect();
+    area.removeEventListener('pointermove',onPointer);
+    area.removeEventListener('pointerleave',clearPointer);
+    area.removeEventListener('pointercancel',clearPointer);
+    window.removeEventListener('blur',clearPointer);
     document.removeEventListener('visibilitychange',syncAnimation);
     motion.removeEventListener('change',syncAnimation);
   }
-  return {destroy,setPaused(value){paused=value;syncAnimation();}};
+
+  return {destroy,setPaused(value){paused=value;if(paused)clearPointer();syncAnimation();}};
 }

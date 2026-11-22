@@ -1,0 +1,40 @@
+.app-header .header-actions > .spider-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: var(--blue);
+  border-radius: 50%;
+  background: var(--blue-soft);
+}
+
+.app-header .header-actions > .spider-toggle[aria-pressed="false"] {
+  color: #777e8c;
+  background: transparent;
+}
+
+.spider-toggle[aria-pressed="false"]::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 1.5px;
+  background: currentColor;
+  box-shadow: 0 0 0 1px #fff;
+  transform: rotate(-45deg);
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  .app-header .header-actions > .spider-toggle {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (max-width: 340px) {
+  .app-header:has(.spider-toggle) .brand > span:last-child {
+    position: absolute;
+    clip-path: inset(50%);
+  }
+}

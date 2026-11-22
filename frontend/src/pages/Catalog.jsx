@@ -4,6 +4,8 @@ import {OpportunityCover} from '../components/OpportunityCover.jsx';
 import {Icon} from '../components/Icons.jsx';
 import {AsyncButton, Button, Criteria, DataForm, Empty, Select, Skeletons, Submit} from '../components/Common.jsx';
 import {PageHeading} from '../components/Layout.jsx';
+import {ElectronicSpider} from '../components/ElectronicSpider.jsx';
+import './spider-area.css';
 import {opportunityHref,internalClick} from '../routing/routes.js';
 import {useGridEntrance} from '../hooks/useGridEntrance.js';
 
@@ -62,14 +64,18 @@ function Collection() {
   return <><div className="results-caption"><span>{t('resultCount',{count:collection.total})}</span><span className="view-indicator"><Icon name="grid" />{t(route === 'saved' ? 'saved' : 'explore')}</span></div><OpportunityGrid items={collection.items} /><Pagination result={collection} /></>;
 }
 export function CatalogPage() {
-  const {t, route, query, setQuery, submitQuery, filters, applyFilters, options, resetFilters, setModal} = useApp();
+  const {t, route, user, query, setQuery, submitQuery, filters, applyFilters, options, resetFilters, setModal} = useApp();
+  const showSpider = user?.appearance?.spider_enabled !== false;
   if (route === 'saved') return <main className="page" id="main-content"><PageHeading title="savedTitle" subtitle="savedSubtitle" /><section id="collection"><Collection /></section></main>;
-  return <main className="page" id="main-content"><PageHeading title="discoverTitle" subtitle="discoverSubtitle" /><div className="catalog-layout">
+  return <main className="page" id="main-content"><PageHeading title="discoverTitle" subtitle="discoverSubtitle" />
+    <div className={showSpider ? 'catalog-content has-spider' : 'catalog-content'}>
+      {showSpider && <ElectronicSpider />}
+      <div className="catalog-layout">
     <aside className="filter-sidebar" aria-label={t('filters')}><div className="filter-title"><h2><Icon name="filter" />{t('filters')}</h2><button type="button" className="text-button" data-action="reset-filters" onClick={resetFilters}>{t('reset')}</button></div><FilterForm /></aside>
     <section className="catalog-main" aria-label={t('explore')}><CatalogHealth /><form className="catalog-tools" data-form="query" onSubmit={event => { event.preventDefault(); submitQuery(); }}><label className="search-box"><span className="sr-only">{t('search')}</span><Icon name="search" /><input type="search" name="query" value={query} onChange={event => setQuery(event.target.value)} placeholder={t('search')} autoComplete="off" /><span className="search-key">⌘ K</span></label><button type="button" className="button secondary mobile-only" data-action="filters" aria-label={t('filters')} onClick={() => setModal({type:'filters'})}><Icon name="filter" /></button></form>
       <div className="category-tabs" aria-label={t('type')}>{['any','course','exchange','grant','program'].map(key => <button key={key} type="button" data-type={key} className={filters.type === key ? 'active' : ''} onClick={() => applyFilters({...filters,type:key})}>{options('type').find(row => row.value === key)?.label || key}</button>)}</div>
       <div id="collection"><Collection /></div>
-    </section></div></main>;
+    </section></div></div></main>;
 }
 
 function CatalogHealth() {

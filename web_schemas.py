@@ -112,11 +112,13 @@ class Notifications(Input):
 class Appearance(Input):
     accent: Literal['blue','lemon','orange','red','green'] = 'blue'
     spider_enabled: bool = True
+    spider_ludicrous: bool = False
 
 
 class AppearancePatch(Input):
     accent: Literal['blue','lemon','orange','red','green'] | None = None
     spider_enabled: bool | None = None
+    spider_ludicrous: bool | None = None
 
 
 class Settings(Input):
