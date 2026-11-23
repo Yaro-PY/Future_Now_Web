@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock,patch
 
 import database as db
 from tests.test_api import APITests,opportunity
-from course_cover_assignments import COURSE_COVER_NAMES
+from opportunity_cover_assignments import OPPORTUNITY_COVER_NAMES
 from opportunity_pages import opportunity_path
 
 
@@ -66,17 +66,18 @@ class PublicOpportunityTests(APITests):
         self.assertIn('/assets/react/bundles/',page.text)
         self.assertEqual(page.headers['cache-control'],'no-cache')
 
-    async def test_individual_course_covers_are_unique_and_follow_listing_identity(self):
-        self.assertTrue(COURSE_COVER_NAMES)
-        folder = Path(__file__).resolve().parents[1] / 'static' / 'images' / 'courses'
+    async def test_individual_opportunity_covers_are_unique_and_follow_listing_identity(self):
+        self.assertTrue(OPPORTUNITY_COVER_NAMES)
+        folder = Path(__file__).resolve().parents[1] / 'static' / 'images'
         hashes = {sha256((folder / f'{asset}.jpg').read_bytes()).digest()
-                  for asset in COURSE_COVER_NAMES.values()}
-        self.assertEqual(len(hashes), len(COURSE_COVER_NAMES))
+                  for asset in OPPORTUNITY_COVER_NAMES.values()}
+        self.assertEqual(len(hashes), len(OPPORTUNITY_COVER_NAMES))
 
-        identity, asset = next(iter(COURSE_COVER_NAMES.items()))
-        event = opportunity(1, external_id=identity)
+        identity, asset = next((key, asset) for key, asset in OPPORTUNITY_COVER_NAMES.items()
+                               if asset.startswith('opportunities/'))
+        event = opportunity(1, external_id=identity, event_type='contest')
         await db.upsert_events([event])
-        cover = f'/assets/images/courses/{asset}.jpg'
+        cover = f'/assets/images/{asset}.jpg'
         for title in ('Course before source refresh', 'New course title from source'):
             event.title = title
             await db.upsert_events([event])

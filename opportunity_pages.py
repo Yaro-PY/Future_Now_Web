@@ -7,7 +7,7 @@ from fastapi import Request
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 
 import database as db
-from course_cover_assignments import COURSE_COVER_NAMES
+from opportunity_cover_assignments import OPPORTUNITY_COVER_NAMES
 from event_media import cover_urls
 
 _TRANSLITERATION=str.maketrans(dict(zip(
@@ -42,10 +42,6 @@ COURSE_TAG_TOPICS = (
 
 
 def course_photo_name(event):
-    assigned = COURSE_COVER_NAMES.get(event.external_id)
-    if assigned:
-        return 'courses/' + assigned
-
     title = event.title.casefold()
     theme = next((theme for theme, pattern in COURSE_TITLE_TOPICS if pattern.search(title)), None)
     if theme is None:
@@ -56,6 +52,10 @@ def course_photo_name(event):
 
 
 def image_name(event):
+    assigned = OPPORTUNITY_COVER_NAMES.get(event.external_id)
+    if assigned:
+        return assigned
+
     kind = db.LEGACY_TYPES.get(event.event_type, event.event_type)
     if kind == 'course': return course_photo_name(event)
     if kind == 'grant': return 'earthrise'
