@@ -6,6 +6,7 @@ import {FilterForm} from '../pages/Catalog.jsx';
 import {ProposalForm} from '../pages/Proposals.jsx';
 import {SecurityWizard} from '../pages/Security.jsx';
 import {AccountActions} from '../pages/AccountActions.jsx';
+import {DirectionEditor} from '../pages/DirectionEditor.jsx';
 import {PublishedEditor, ReportReview} from '../pages/Administration.jsx';
 
 function Onboarding() {
@@ -42,6 +43,7 @@ export function ModalContent() {
   }
   if (modal.type === 'security-wizard') return <SecurityWizard />;
   if (modal.type === 'onboarding') return <Onboarding />;
+  if (modal.type === 'edit-direction') return <Dialog title={t(modal.item ? 'editDirection' : 'createDirection')} className="modal wide-modal" onClose={close}><DirectionEditor key={modal.item?.key || 'new'} item={modal.item} /></Dialog>;
   if (modal.type === 'edit-published') return <Dialog title={t('editListing')} className="modal wide-modal" onClose={close}><PublishedEditor item={modal.item}/></Dialog>;
   if (modal.type === 'review-report') return <Dialog title={t('processReport')} onClose={close}><ReportReview item={modal.item}/></Dialog>;
   if (['recover-access','delete-account','withdraw-proposal'].includes(modal.type)) return <AccountActions />;

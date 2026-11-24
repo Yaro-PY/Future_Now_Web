@@ -1,4 +1,5 @@
 """Administration regressions use isolated SQLite and a mocked link checker."""
+from base64 import b64encode
 from datetime import timedelta
 from io import BytesIO
 
@@ -41,6 +42,53 @@ class AdministrationTests(APITests):
         self.assertEqual(response.status_code,403)
         response=await self.client.patch('/api/v1/admin/reports/1',json={'expected_revision':1,'status':'in_progress'})
         self.assertEqual(response.status_code,403)
+
+    async def test_direction_management_and_catalog_scope(self):
+        public = (await self.client.get('/api/v1/directions')).json()['items']
+        self.assertEqual(len(public), 11)
+        courses = next(item for item in public if item['key'] == 'course')
+        self.assertEqual(courses['revision'], 0)
+        self.assertTrue(courses['default_cover_url'].endswith('/directions/course.jpg'))
+
+        draft = {'title_uk': 'ІТ-курси', 'title_en': 'IT courses',
+                 'description_uk': 'Добірка курсів з програмування.',
+                 'filter_type': 'course', 'topic': 'it'}
+        await self.register()
+        self.assertEqual((await self.request('POST', '/admin/directions', json=draft)).status_code, 403)
+        await self.admin_login()
+        self.assertEqual((await self.client.post('/api/v1/admin/directions', json=draft)).status_code, 403)
+
+        data = BytesIO()
+        Image.new('RGB', (80, 60), 'blue').save(data, format='PNG')
+        cover_image = b64encode(data.getvalue()).decode()
+        created = await self.request('POST', '/admin/directions', json={**draft, 'cover_image': cover_image})
+        self.assertEqual(created.status_code, 201, created.text)
+        card = created.json()
+        self.assertEqual(card['topic'], 'it')
+        cover = await self.client.get(card['cover_url'])
+        self.assertEqual(cover.headers['content-type'], 'image/webp')
+        self.assertEqual(Image.open(BytesIO(cover.content)).size, (80, 60))
+        self.assertNotIn('cover_content', card)
+
+        saved = await self.request('PATCH', '/admin/directions/course', json={**draft, 'expected_revision': 0})
+        self.assertEqual(saved.status_code, 200, saved.text)
+        self.assertEqual(saved.json()['revision'], 1)
+        self.assertEqual((await self.request('PATCH', '/admin/directions/course',
+                                              json={**draft, 'expected_revision': 0})).status_code, 409)
+
+        path = f"/admin/directions/{card['key']}"
+        edited = await self.request('PATCH', path, json={**draft, 'expected_revision': 1})
+        self.assertEqual(edited.json()['cover_url'], card['cover_url'])
+        restored = await self.request('PATCH', path, json={**draft, 'expected_revision': 2, 'cover_image': None})
+        self.assertEqual(restored.status_code, 200, restored.text)
+        self.assertIsNone(restored.json()['cover_url'])
+        self.assertEqual((await self.client.get(card['cover_url'])).status_code, 404)
+
+        await db.upsert_events([opportunity(1, topics=['it']), opportunity(2)])
+        search = await self.request('POST', '/opportunities/search',
+                                    json={'filters': {'type': 'course'}, 'direction_topic': 'it'})
+        self.assertEqual([item['title'] for item in search.json()['items']], ['Course 1'])
+        self.assertNotIn('topics', (await db.get_account(ADMIN)).search_defaults)
 
     async def test_course_cover_saved_in_db_and_visible_in_all_views(self):
         await self.admin_login()

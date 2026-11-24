@@ -12,7 +12,11 @@
 .section-search .search-box { flex: 1; min-width: 0; }
 .section-search > .button { flex-shrink: 0; }
 .directions-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 30px 24px; }
-.direction-card { display: block; min-width: 0; padding: 0; text-align: left; }
+.direction-entry { display: grid; align-content: start; gap: 10px; min-width: 0; justify-items: start; }
+.direction-card { display: block; width: 100%; min-width: 0; padding: 0; text-align: left; overflow-wrap: anywhere; }
+.catalog-admin-actions { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+.catalog-card-edit { margin-top: 8px; }
+.direction-scope { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; font-size: 13px; overflow-wrap: anywhere; }
 .direction-card > img { width: 100%; aspect-ratio: 1.85; object-fit: cover; border-radius: 16px; filter: saturate(.8); transition: filter .25s, transform .25s; }
 .direction-card:hover > img { filter: saturate(1); transform: translateY(-3px); }
 .direction-body { display: block; padding: 18px 0 12px; }

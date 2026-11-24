@@ -17,6 +17,7 @@ export function AppProvider({children}) {
   const [filters, setFilters] = useState({...ANY_FILTERS});
   const [query, setQuery] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDirection, setSelectedDirection] = useState(null);
   const [page, setPage] = useState(1);
   const [savedCount, setSavedCount] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -35,7 +36,7 @@ export function AppProvider({children}) {
   const debouncedQuery = useDebouncedValue(query.trim());
 
   function clearSession() {
-    setUser(null); setSavedCount(0); setCollection(null); setProposalPage(null);
+    setUser(null); setSelectedDirection(null); setSavedCount(0); setCollection(null); setProposalPage(null);
     setModal(null); setMenuOpen(false); api.csrfToken = null;
   }
   function fail(error) {
@@ -113,8 +114,8 @@ export function AppProvider({children}) {
   }, [accountKey, Boolean(user)]);
   const feed = useRemoteResource({
     enabled:Boolean(user) && !onboardingOpen && ['explore','saved'].includes(route),
-    resourceKey:JSON.stringify([route,accountKey,filters,searchQuery,page,language,revision]),
-    load:() => route === 'saved' ? api.request(`/me/favorites?page=${page}&page_size=6`) : api.search({filters,query:searchQuery,page,page_size:6}),
+    resourceKey:JSON.stringify([route,accountKey,filters,selectedDirection?.topic,searchQuery,page,language,revision]),
+    load:() => route === 'saved' ? api.request(`/me/favorites?page=${page}&page_size=6`) : api.search({filters,direction_topic:selectedDirection?.topic,query:searchQuery,page,page_size:6}),
     onLoad:result => {
       if (page > result.pages) setPage(Math.max(1,result.pages));
       if (route === 'saved') setSavedCount(result.total);
@@ -155,9 +156,16 @@ export function AppProvider({children}) {
     setConfig(nextConfig); setLanguage(value);
   }
   function applyFilters(value) {
+    setSelectedDirection(null);
     setCollection(null); setPage(1); setFilters({...value, city:value.country === 'ukraine' ? value.city : 'any'});
     setRevision(current => current + 1);
     setModal(null);
+  }
+  function openDirection(item) {
+    setQuery(''); setSearchQuery('');
+    applyFilters({...filters,type:item?.filter_type || 'any'});
+    setSelectedDirection(item || null);
+    go('explore');
   }
   function resetFilters() { setQuery(''); setSearchQuery(''); applyFilters({...ANY_FILTERS,criteria:[]}); }
   async function refreshCatalog(reload = true) {
@@ -179,7 +187,7 @@ export function AppProvider({children}) {
   const value = {
     resourceRevision:revision,
     api, user, setUser, config, booting, notification, language, t, date, options:(name, excludeAny = false) => (config?.catalogs?.[name] || []).filter(row => !excludeAny || row.value !== 'any'),
-    route, go, requestLogin, filters, applyFilters, resetFilters, query, setQuery, submitQuery:() => { setSearchQuery(query.trim()); setPage(1); setRevision(value => value + 1); },
+    route, go, requestLogin, selectedDirection, openDirection, filters, applyFilters, resetFilters, query, setQuery, submitQuery:() => { setSearchQuery(query.trim()); setPage(1); setRevision(value => value + 1); },
     openAssistantCatalog:values=>{setQuery('');setSearchQuery('');applyFilters(values);go('explore');},
     page, setPage, collection, collectionError, claimGridEntrance, proposalPage, proposalError, savedCount, menuOpen, setMenuOpen,
     modal, setModal, detailId, setDetailId, toast, fail, errorMessage, enter, changeLanguage, toggleFavorite, refreshCatalog,

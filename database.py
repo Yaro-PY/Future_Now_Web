@@ -67,6 +67,21 @@ submission_covers = Table(
     Column('content', LargeBinary, nullable=False),
 )
 
+directions = Table(
+    'directions', Base.metadata,
+    Column('key', String(32), primary_key=True),
+    Column('title_uk', String(100), nullable=False),
+    Column('title_en', String(100), nullable=False),
+    Column('description_uk', String(600), nullable=False),
+    Column('description_en', String(600), nullable=False),
+    Column('filter_type', String(16), nullable=False),
+    Column('topic', String(16)),
+    Column('cover_version', String(32)),
+    Column('cover_content', LargeBinary),
+    Column('revision', Integer, nullable=False),
+    Column('created_at', DateTime, nullable=False, server_default=func.current_timestamp()),
+)
+
 # The status transition also runs when the Telegram bot moderates a website proposal.
 SQLITE_FINALIZE_COVER = """
 CREATE TRIGGER IF NOT EXISTS finalize_submission_cover AFTER UPDATE OF status ON submissions
@@ -581,7 +596,7 @@ async def database_ready(require_schema=False):
                            Event.revision, Event.admin_overrides, Event.source_url, Event.admin_updated_at, Event.admin_updated_by,
                            Report.status, Report.review_note, Report.reviewed_by, Report.updated_at, Report.resolved_at, Report.revision, AdminAudit.id,
                            Submission.revision, Submission.updated_at, Account.avatar_revision,
-                           Avatar.account_id, TwoFactor.credential_id, AuthChallenge.token_hash, event_covers.c.version, submission_covers.c.version):
+                           Avatar.account_id, TwoFactor.credential_id, AuthChallenge.token_hash, event_covers.c.version, submission_covers.c.version, directions.c.revision):
                 await session.execute(select(column).limit(1))
 
 

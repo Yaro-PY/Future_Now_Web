@@ -380,7 +380,10 @@ async def page_events(events, page, page_size, language, account_id=None, applie
 @router.post('/opportunities/search', response_model=schema.EventPage)
 async def search(body: schema.Search, user: Principal = Depends(changing_user)):
     applied = body.filters or effective_filters(user.account)
-    events = await db.search_events(applied.model_dump())
+    prefs = applied.model_dump()
+    if body.direction_topic:
+        prefs['topics'] = [body.direction_topic]
+    events = await db.search_events(prefs)
     query = body.query.strip().casefold()
     if query: events = [event for event in events if query in (event.title + ' ' + event.description).casefold()]
     await save_filters(user.account, applied.model_dump())
@@ -547,6 +550,10 @@ install_security(router, current_user=current_user, changing_user=changing_user,
 from admin_catalog import install as install_administration
 install_administration(router,current_user=current_user,changing_user=changing_user,require_admin=require_admin,fail=fail)
 install_event_media(router, current_user=current_user, changing_user=changing_user, require_admin=require_admin, fail=fail)
+
+
+from directions_api import install as install_directions
+install_directions(router, changing_user=changing_user, require_admin=require_admin, fail=fail)
 
 
 def install(app: FastAPI):

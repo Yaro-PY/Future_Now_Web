@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
 
-from flow_catalog import TYPES, COUNTRIES, CITIES, FORMATS, DATES, CRITERIA
+from flow_catalog import TYPES, COUNTRIES, CITIES, FORMATS, DATES, CRITERIA, TOPICS
 from identity import age_group, normalize_name, normalize_nickname
 from import_events import Opportunity
 from proposals import canonical_url
@@ -129,9 +129,18 @@ class Settings(Input):
 
 class Search(Input):
     filters: Filters | None = None
+    direction_topic: str | None = None
     query: str = Field(default='', max_length=120)
     page: int = Field(default=1, ge=1)
     page_size: int = Field(default=10, ge=1, le=50)
+
+
+    @field_validator('direction_topic')
+    @classmethod
+    def known_topic(cls, value):
+        if value is not None and value not in TOPICS:
+            raise ValueError('Unknown topic')
+        return value
 
 
 class Report(Input):

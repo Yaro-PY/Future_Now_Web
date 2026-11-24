@@ -13,7 +13,7 @@ export function readCoverFile(file) {
   });
 }
 
-export function ProposalCoverInput({file, existing, onChange}) {
+export function ProposalCoverInput({file, existing, onChange, label = 'listingCover', help = 'proposalCoverHelp', remove = 'removeProposalCover'}) {
   const {t} = useApp();
   const input = useRef(null);
   const [preview, setPreview] = useState(null);
@@ -42,19 +42,19 @@ export function ProposalCoverInput({file, existing, onChange}) {
     onChange(next);
   }
 
-  return <section className="field full" aria-label={t('listingCover')}>
-    <span>{t('listingCover')} ({t('optional')})</span>
-    {src && <img className="cover-editor-preview" src={src} alt={t('listingCover')} />}
+  return <section className="field full" aria-label={t(label)}>
+    <span>{t(label)} ({t('optional')})</span>
+    {src && <img className="cover-editor-preview" src={src} alt={t(label)} />}
     <div className="photo-actions">
       <input ref={input} type="file" accept={types.join(',')} aria-label={t('chooseCover')} onChange={select} hidden />
       <Button kind="line" action="choose-proposal-cover" onClick={() => input.current.click()}>
         {t(file || src ? 'replaceCover' : 'chooseCover')}
       </Button>
       {(file || src) && <Button kind="line" action="remove-proposal-cover" onClick={() => {setError('');onChange(null);}}>
-        {t('removeProposalCover')}
+        {t(remove)}
       </Button>}
     </div>
-    <p className="subtext">{t('proposalCoverHelp')}</p>
+    <p className="subtext">{t(help)}</p>
     {error && <p className="form-error" role="alert">{t(error)}</p>}
   </section>;
 }

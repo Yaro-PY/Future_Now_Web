@@ -19,3 +19,8 @@ After the base schema, run `002_user_controls.sql` before deploying the user-con
 ## Profile photo and MFA
 
 Run `003_profile_security.sql` after 001/002, then set the same secret `AUTH_ENCRYPTION_KEY` on both production projects before enabling MFA. Existing accounts start with MFA disabled. See [SECURITY_PROFILE.md](../SECURITY_PROFILE.md).
+
+
+## Website directions
+
+Run `006_directions.sql` on the existing database before deploying the direction editor. The table stores custom directions, edits to built-in directions and uploaded covers. Built-in cards retain their original content until an administrator edits them.
