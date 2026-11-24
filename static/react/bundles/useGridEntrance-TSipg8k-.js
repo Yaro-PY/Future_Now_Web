@@ -1,0 +1,1 @@
+import{A as e,N as t,P as n}from"./index-B7cShxoO.js";var r=n(t(),1);function i(t=!0){let{route:n,claimGridEntrance:i}=e(),[a,o]=(0,r.useState)(!1);return(0,r.useLayoutEffect)(()=>{t&&i(n)&&o(!0)},[t,n,i]),[a,()=>o(!1)]}export{i as t};

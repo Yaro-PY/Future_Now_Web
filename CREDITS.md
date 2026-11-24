@@ -119,6 +119,20 @@ Individual photos for contests, programs, workshops, and other opportunities in 
 - [`youth-english-debates.jpg`](https://www.pexels.com/photo/young-woman-speaking-on-a-microphone-in-a-class-17558086/)
 - [`historical-decolonization.jpg`](https://www.pexels.com/photo/interior-of-the-saint-sophia-cathedral-kyiv-ukraine-18350756/)
 
+Photographs for the category cards in `static/images/directions/`.
+
+- [`international.jpg`](https://www.pexels.com/photo/group-of-students-working-together-6684552/)
+- [`ukrainian.jpg`](https://www.pexels.com/photo/people-relaxing-in-a-city-park-in-ukraine-14101070/)
+- [`exchange.jpg`](https://www.pexels.com/photo/students-walking-on-the-campus-7972653/)
+- [`course.jpg`](https://www.pexels.com/photo/a-person-researching-and-typing-on-the-laptop-6549856/)
+- [`program.jpg`](https://www.pexels.com/photo/university-students-taking-notes-in-classroom-37758762/)
+- [`volunteer.jpg`](https://www.pexels.com/photo/people-packing-donations-7156163/)
+- [`grant.jpg`](https://www.pexels.com/photo/a-person-wearing-wristwatch-filling-up-the-paper-8293764/)
+- [`contest.jpg`](https://www.pexels.com/photo/selective-focus-of-golden-trophies-9189210/)
+- [`internship.jpg`](https://www.pexels.com/photo/group-of-focused-colleagues-working-together-in-office-5324855/)
+- [`hackathon.jpg`](https://www.pexels.com/photo/people-looking-at-a-laptop-4385446/)
+- [`other.jpg`](https://www.pexels.com/photo/city-library-with-bookshelves-and-desktop-computers-4318442/)
+
 Pexels license: https://www.pexels.com/license/
 NASA media guidance: https://www.nasa.gov/nasa-brand-center/images-and-media/
 
