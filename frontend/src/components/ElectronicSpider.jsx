@@ -21,7 +21,6 @@ export function ElectronicSpider({roaming = false}) {
   const uk = language !== 'en';
   const title = uk ? 'Гоша помічник' : 'Gosha the assistant';
   const paused = Boolean(panel || modal || menuOpen);
-  const Surface = roaming ? 'div' : 'aside';
 
   useEffect(() => {
     const [hue,color] = palette[accent];
@@ -48,16 +47,15 @@ export function ElectronicSpider({roaming = false}) {
     press.current = null;
     if (paused || event.defaultPrevented || event.button !== 0 || event.detail === 0 ||
         event.ctrlKey || event.metaKey || event.altKey || event.shiftKey || document.querySelector('dialog[open]')) return;
-    if (roaming ? !isFreeBackground(event.target) : event.target !== event.currentTarget) return;
+    if (!isFreeBackground(event.target)) return;
     if (!down || Math.hypot(event.clientX - down.x, event.clientY - down.y) > 8 || window.getSelection()?.toString()) return;
     if (!isSpiderPixel(canvas.current, event.clientX, event.clientY, down.touch ? 7 : 3)) return;
     event.preventDefault();
     event.stopPropagation();
     setPanel('menu');
-  }, [roaming,paused]);
+  }, [paused]);
 
   useEffect(() => {
-    if (!roaming) return;
     window.addEventListener('pointerdown', rememberPress, {capture:true,passive:true});
     window.addEventListener('pointercancel', cancelPress, true);
     window.addEventListener('click', openFromCanvas, true);
@@ -66,11 +64,9 @@ export function ElectronicSpider({roaming = false}) {
       window.removeEventListener('pointercancel', cancelPress, true);
       window.removeEventListener('click', openFromCanvas, true);
     };
-  }, [roaming,rememberPress,cancelPress,openFromCanvas]);
+  }, [rememberPress,cancelPress,openFromCanvas]);
 
-  return <Surface className={roaming ? 'spider-roaming' : 'spider-area'} aria-label={roaming ? undefined : title}
-    onPointerDown={roaming ? undefined : rememberPress}
-    onPointerCancel={roaming ? undefined : cancelPress} onClick={roaming ? undefined : openFromCanvas}>
+  return <div className={roaming ? 'spider-overlay spider-roaming' : 'spider-overlay'}>
     <canvas ref={canvas} className="electronic-spider" aria-hidden="true" />
     <button type="button" className="sr-only spider-keyboard-access" data-action="spider-menu" onClick={() => setPanel('menu')}>
       {uk ? 'Відкрити меню Гоші' : 'Open Gosha’s menu'}
@@ -81,5 +77,5 @@ export function ElectronicSpider({roaming = false}) {
       </div>
     </Dialog>}
     {panel === 'assistant' && <SpiderAssistant onClose={() => setPanel(null)} onBack={() => setPanel('menu')} assistant={assistant}/>}
-  </Surface>;
+  </div>;
 }

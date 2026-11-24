@@ -4,7 +4,9 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb',roaming=fa
   const context=canvas.getContext('2d');
   if(!context) return {destroy(){},setPaused(){}};
   const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
-  let width=0,height=0,legs=[],frame=0,previousTime=0,lastPaint=0,phase=2.25;
+  const scale=.5;
+  const edge=12;
+  let width=0,height=0,legs=[],frame=0,previousTime=0,lastPaint=0,phase=roaming?2.25:0;
   let stopped=false,paused=false,visible=true;
   const target={x:0,y:0},lastTarget={x:0,y:0};
   let pointer=null;
@@ -42,7 +44,7 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb',roaming=fa
     }
     move(speed) {
       const angle=Math.atan2(target.y-this.y,target.x-this.x);
-      const tip={x:target.x-.8*(speed+5)*Math.cos(angle),y:target.y-.8*(speed+5)*Math.sin(angle)};
+      const tip={x:target.x-.8*(speed+5*scale)*Math.cos(angle),y:target.y-.8*(speed+5*scale)*Math.sin(angle)};
       this.segments.at(-1).update(tip);
       for(let i=this.segments.length-2;i>=0;i--) this.segments[i].update(this.segments[i+1].position);
       if(distance(this,target)<=this.length+speed) {
@@ -55,10 +57,10 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb',roaming=fa
       context.moveTo(this.x,this.y);
       for(const segment of this.segments) context.lineTo(segment.next.x,segment.next.y);
       context.strokeStyle=this.color;
-      context.lineWidth=.45+this.random*1.15;
+      context.lineWidth=(.45+this.random*1.15)*scale;
       context.stroke();
       context.beginPath();
-      context.arc(this.x,this.y,1+this.random*2,0,Math.PI*2);
+      context.arc(this.x,this.y,(1+this.random*2)*scale,0,Math.PI*2);
       context.fillStyle=this.color;
       context.fill();
     }
@@ -73,13 +75,14 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb',roaming=fa
       leg.move(speed);leg.show();
     }
     context.beginPath();
-    context.arc(target.x,target.y,Math.min(12,speed+5),0,Math.PI*2);
+    context.arc(target.x,target.y,Math.min(12*scale,speed+5*scale),0,Math.PI*2);
     context.fillStyle=color;
     context.fill();
     lastTarget.x=target.x;lastTarget.y=target.y;
   }
 
   function patrolDestination() {
+    if(!roaming) return {x:width/2,y:edge+(height-2*edge)*(1-Math.cos(phase))/2};
     return {
       x:width*(.5+.34*Math.sin(phase)),
       y:height*(.5+.37*Math.cos(phase*1.45)),
@@ -99,8 +102,9 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb',roaming=fa
     canvas.width=Math.round(width*ratio);canvas.height=Math.round(height*ratio);
     context.setTransform(ratio,0,0,ratio,0,0);
     const count=clamp(Math.round(width*height/1350),65,roaming?360:230);
-    const maxLength=clamp(Math.min(width,height)*.49,18,roaming?270:190);
-    const minLength=Math.min(42,maxLength*.65);
+    const span=roaming?Math.min(width,height)*.49:width*.98;
+    const maxLength=clamp(span,18,roaming?270:190)*scale;
+    const minLength=Math.min(42*scale,maxLength*.65);
     legs=Array.from({length:count},()=>new Tentacle(Math.random()*width,Math.random()*height,
       Math.random()*(maxLength-minLength)+minLength,18));
     if(initial) Object.assign(target,patrolDestination());
@@ -116,11 +120,12 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb',roaming=fa
       const elapsed=Math.min((time-(previousTime||time-interval))/1000,.05);
       previousTime=time;lastPaint=time;
       const chasing=roaming&&pointer;
-      if(!chasing) phase+=elapsed*.8;
+      if(!chasing) phase+=elapsed*(roaming ? .8 : .48);
       const destination=chasing||patrolDestination();
       const blend=1-Math.exp(-elapsed*(chasing?9:4));
-      target.x+=(clamp(destination.x,12,width-12)-target.x)*blend;
-      target.y+=(clamp(destination.y,12,height-12)-target.y)*blend;
+      const horizontalInset=Math.min(edge,width/2);
+      target.x+=(clamp(destination.x,horizontalInset,width-horizontalInset)-target.x)*blend;
+      target.y+=(clamp(destination.y,edge,height-edge)-target.y)*blend;
       paint();
     }
     frame=requestAnimationFrame(animate);

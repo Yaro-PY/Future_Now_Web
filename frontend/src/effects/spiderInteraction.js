@@ -1,4 +1,4 @@
-// Only a painted pixel on empty background will open the roaming spider menu.
+// Only a painted pixel on empty background will open the spider menu.
 const controls = 'a,button,input,select,textarea,label,form,summary,details,dialog,nav,header,footer,' +
   '[role="button"],[role="link"],[role="menu"],[role="dialog"],[role="tab"],' +
   '[tabindex]:not([tabindex="-1"]),[contenteditable]:not([contenteditable="false"]),' +
