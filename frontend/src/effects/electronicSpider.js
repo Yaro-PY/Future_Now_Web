@@ -9,7 +9,7 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb',roaming=fa
   let width=0,height=0,legs=[],frame=0,previousTime=0,lastPaint=0,phase=roaming?2.25:0;
   let stopped=false,paused=false,visible=true;
   const target={x:0,y:0},lastTarget={x:0,y:0};
-  let pointer=null;
+  let cursor=null,pointer=null,verticalInset=edge;
   const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
   const clamp=(value,low,high)=>Math.min(high,Math.max(low,value));
 
@@ -82,7 +82,7 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb',roaming=fa
   }
 
   function patrolDestination() {
-    if(!roaming) return {x:width/2,y:edge+(height-2*edge)*(1-Math.cos(phase))/2};
+    if(!roaming) return {x:width/2,y:verticalInset+(height-2*verticalInset)*(1-Math.cos(phase))/2};
     return {
       x:width*(.5+.34*Math.sin(phase)),
       y:height*(.5+.37*Math.cos(phase*1.45)),
@@ -97,7 +97,7 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb',roaming=fa
       target.x*=nextWidth/width;
       target.y*=nextHeight/height;
     }
-    width=nextWidth;height=nextHeight;pointer=null;
+    width=nextWidth;height=nextHeight;
     const ratio=Math.min(window.devicePixelRatio||1,1.75);
     canvas.width=Math.round(width*ratio);canvas.height=Math.round(height*ratio);
     context.setTransform(ratio,0,0,ratio,0,0);
@@ -105,9 +105,12 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb',roaming=fa
     const span=roaming?Math.min(width,height)*.49:width*.98;
     const maxLength=clamp(span,18,roaming?270:190)*scale;
     const minLength=Math.min(42*scale,maxLength*.65);
+    verticalInset=Math.min(height/2,roaming ? edge : maxLength+edge);
     legs=Array.from({length:count},()=>new Tentacle(Math.random()*width,Math.random()*height,
       Math.random()*(maxLength-minLength)+minLength,18));
     if(initial) Object.assign(target,patrolDestination());
+    target.y=clamp(target.y,verticalInset,height-verticalInset);
+    updatePointer();
     Object.assign(lastTarget,target);
     paint();
   }
@@ -119,13 +122,13 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb',roaming=fa
     if(time-lastPaint>=interval) {
       const elapsed=Math.min((time-(previousTime||time-interval))/1000,.05);
       previousTime=time;lastPaint=time;
-      const chasing=roaming&&pointer;
+      const chasing=pointer;
       if(!chasing) phase+=elapsed*(roaming ? .8 : .48);
       const destination=chasing||patrolDestination();
       const blend=1-Math.exp(-elapsed*(chasing?9:4));
       const horizontalInset=Math.min(edge,width/2);
       target.x+=(clamp(destination.x,horizontalInset,width-horizontalInset)-target.x)*blend;
-      target.y+=(clamp(destination.y,edge,height-edge)-target.y)*blend;
+      target.y+=(clamp(destination.y,verticalInset,height-verticalInset)-target.y)*blend;
       paint();
     }
     frame=requestAnimationFrame(animate);
@@ -137,18 +140,24 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb',roaming=fa
     if(!document.hidden&&visible&&!motion.matches&&!stopped&&!paused) frame=requestAnimationFrame(animate);
   }
 
-  function onPointer(event) {
-    if(event.pointerType==='touch'||motion.matches||paused) return;
+  function updatePointer() {
+    pointer=null;
+    if(!cursor) return;
     const bounds=canvas.getBoundingClientRect();
-    if(bounds.width&&bounds.height) {
-      pointer={
-        x:(event.clientX-bounds.left)*width/bounds.width,
-        y:(event.clientY-bounds.top)*height/bounds.height,
-      };
+    const x=cursor.x-bounds.left,y=cursor.y-bounds.top;
+    if(x>=0&&x<bounds.width&&y>=0&&y<bounds.height) {
+      pointer={x:x*width/bounds.width,y:y*height/bounds.height};
     }
   }
 
-  function clearPointer() {pointer=null;}
+  function onPointer(event) {
+    if(event.pointerType==='touch') {clearPointer();return;}
+    if(motion.matches||paused) return;
+    cursor={x:event.clientX,y:event.clientY};
+    updatePointer();
+  }
+
+  function clearPointer() {cursor=null;pointer=null;}
   function onPointerOut(event) {if(!event.relatedTarget) clearPointer();}
 
   const resizeObserver=new ResizeObserver(resize);
@@ -160,11 +169,10 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb',roaming=fa
   resize();syncAnimation();
   resizeObserver.observe(canvas);
   visibilityObserver.observe(canvas);
-  if(roaming) {
-    window.addEventListener('pointermove',onPointer,{passive:true});
-    window.addEventListener('pointerout',onPointerOut);
-    window.addEventListener('pointercancel',clearPointer);
-  }
+  // Observe the pointer without taking control away from the page underneath.
+  window.addEventListener('pointermove',onPointer,{capture:true,passive:true});
+  window.addEventListener('pointerout',onPointerOut,true);
+  window.addEventListener('pointercancel',clearPointer,true);
   window.addEventListener('blur',clearPointer);
   document.addEventListener('visibilitychange',syncAnimation);
   motion.addEventListener('change',syncAnimation);
@@ -174,9 +182,9 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb',roaming=fa
     if(frame) cancelAnimationFrame(frame);
     resizeObserver.disconnect();
     visibilityObserver.disconnect();
-    window.removeEventListener('pointermove',onPointer);
-    window.removeEventListener('pointerout',onPointerOut);
-    window.removeEventListener('pointercancel',clearPointer);
+    window.removeEventListener('pointermove',onPointer,true);
+    window.removeEventListener('pointerout',onPointerOut,true);
+    window.removeEventListener('pointercancel',clearPointer,true);
     window.removeEventListener('blur',clearPointer);
     document.removeEventListener('visibilitychange',syncAnimation);
     motion.removeEventListener('change',syncAnimation);
