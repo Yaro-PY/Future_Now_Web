@@ -4,7 +4,7 @@ export function startElectronicSpider(canvas,{hue=215,color='#2563eb',roaming=fa
   const context=canvas.getContext('2d');
   if(!context) return {destroy(){},setPaused(){}};
   const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
-  const scale=.55;
+  const scale=.605;
   const edge=12;
   let width=0,height=0,legs=[],frame=0,previousTime=0,lastPaint=0,phase=roaming?2.25:0;
   let stopped=false,paused=false,visible=true;
