@@ -54,6 +54,10 @@ body:has(#app > .aura-bg),
   z-index: 1;
 }
 
+.aura-bg ~ .app-header.is-scrolled {
+  background-color: #e8f8fbed;
+}
+
 @media (min-width: 1024px) {
   .aura-layer-first { --aura-blur: 90px; }
   .aura-layer-second { --aura-blur: 43px; }
