@@ -117,7 +117,7 @@ HTTPS/Vercel автоматично використовує Secure-cookie. Дл
 - `frontend/src/context.jsx` — React Context і спільні функції; `i18n.js` — українські/англійські тексти.
 - `frontend/src/api.js` — клієнт із HttpOnly-cookie, CSRF та обробкою помилок. Паролі та сесійні токени не записуються в localStorage.
 - `frontend/src/styles.css` — візуальна система; `sections.css` — напрями й допомога; `responsive.css` — адаптація сіток, форм і навігації.
-- `static/react/` — готова збірка; `static/images/` — фото. Збірка очищає тільки власну папку `static/react`.
+- `static/react/` — локальна або Vercel-збірка, що створюється з `frontend/` і не додається до Git; `static/images/` — фото. Збірка очищає тільки власну папку `static/react`.
 
 Повна структура описана у [frontend/README.md](frontend/README.md). До 480 px каталог має одну колонку, від 480 до 1439 px — дві, від 1440 px — три. До 1024 px фільтри відкриваються в діалозі. До 768 px працює нижня навігація. На сенсорних екранах збільшені області натискання, поля від 16 px та враховані safe-area, горизонтальне положення й динамічна висота екрана.
 
@@ -149,7 +149,7 @@ await api.saveSettings({ language: 'en' });
 
 ## Публікація на Vercel + Neon
 
-Публікуйте цю папку як **окремий Vercel-проєкт сайту**, з коренем у `User_Flow`. Бот розгортається зі своєї папки. `vercel.json` зберігає FastAPI й Frankfurt та перед розгортанням запускає `npm ci --prefix frontend --include=dev && npm run build --prefix frontend`. Параметр `--include=dev` встановлює Vite для збірки навіть із `NODE_ENV=production`. `frontend/package-lock.json` фіксує залежності. Поле Output Directory залишається стандартним для FastAPI. Код містить таблиці `credentials`, `web_sessions`, `auth_throttles`; вони спільні з ботом. Холодний старт Vercel не виконує міграції, а preview не обслуговує робочу БД.
+Публікуйте цю папку як **окремий Vercel-проєкт сайту**, з коренем у `User_Flow`. Бот розгортається зі своєї папки. `vercel.json` зберігає FastAPI й Frankfurt та перед розгортанням запускає `npm ci --prefix frontend --include=dev && npm run build --prefix frontend && python prepare_public_media.py`. Параметр `--include=dev` встановлює Vite для збірки навіть із `NODE_ENV=production`. `frontend/package-lock.json` фіксує залежності. Поле Output Directory залишається стандартним для FastAPI. Код містить таблиці `credentials`, `web_sessions`, `auth_throttles`; вони спільні з ботом. Холодний старт Vercel не виконує міграції, а preview не обслуговує робочу БД.
 
 1. Опублікуйте код із новою залежністю `pwdlib[argon2]`.
 2. У Production задайте той самий `DATABASE_URL`, що й у бота, та `ADMIN_ID`. Додайте точний `WEB_ALLOWED_ORIGINS`, коли буде домен фронтенду. Для одного origin додатковий CORS-домен не потрібен. `BOT_TOKEN`, `WEBHOOK_SECRET` і `CRON_SECRET` сайту не потрібні.

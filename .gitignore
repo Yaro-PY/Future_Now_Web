@@ -11,4 +11,5 @@ __pycache__/
 .idea/
 frontend/node_modules/
 
-public/assets/media/auth/
+/static/react/
+/public/assets/media/auth/
