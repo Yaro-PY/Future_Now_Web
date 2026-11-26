@@ -12,9 +12,9 @@ from PIL import Image
 from sqlalchemy import select, func, delete
 
 from tests.test_api import APITests, PASSWORD
-import database as db
-import web_auth as auth
-import two_factor as mfa
+from backend import database as db
+from backend import web_auth as auth
+from backend import two_factor as mfa
 import main
 
 
@@ -125,7 +125,7 @@ class SecurityTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(auth.AuthError): await auth.issue_session(verified)
         challenge=await self.pending()
         future=time.time()+31
-        with patch('two_factor.time.time',return_value=future):
+        with patch('backend.two_factor.time.time',return_value=future):
             code=pyotp.TOTP(secret).at(future)
             r=await self.finish(challenge,code)
             self.assertEqual(r.status_code,200,r.text)

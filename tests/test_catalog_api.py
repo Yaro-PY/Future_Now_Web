@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from tests.test_api import APITests, opportunity
-import database as db
+from backend import database as db
 
 
 class CatalogAPITests(APITests):

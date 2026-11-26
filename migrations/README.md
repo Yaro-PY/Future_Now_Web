@@ -1,26 +1,14 @@
-# Shared PostgreSQL schema
+# Міграції спільної Neon PostgreSQL
 
-`001_shared_website.sql` adds the tables and columns required by the current bot and website to the existing PostgreSQL database. It is an alternative to running `setup_database.py` with the same backend `DATABASE_URL`.
+Сайт і Telegram-бот використовують один каталог SQL-міграцій. Перед публікацією зміни схеми застосуйте потрібні файли до спільної production-бази в порядку номерів. Для нової бази виконайте всі файли від 001 до 006.
 
-In the SQL editor for the existing production database, open a fresh query, paste the entire file, disable Read-only and run it once. The file is one atomic `DO` statement with a schema advisory lock; it can be rerun. A successful run may return no rows. Existing user, opportunity, bookmark and report records are retained. Report metadata and previously unknown price flags are initialized as in `database._migrate`.
+1. [001_shared_website.sql](001_shared_website.sql) — базова схема каталогу, облікових записів, сесій та модерації.
+2. [002_user_controls.sql](002_user_controls.sql) — версії та час оновлення пропозицій.
+3. [003_profile_security.sql](003_profile_security.sql) — аватари й двофакторна автентифікація. Обидва застосунки використовують спільний `AUTH_ENCRYPTION_KEY`.
+4. [004_event_covers.sql](004_event_covers.sql) — обкладинки опублікованих можливостей.
+5. [005_proposal_covers.sql](005_proposal_covers.sql) — обкладинки пропозицій та перенесення обкладинки після схвалення.
+6. [006_directions.sql](006_directions.sql) — напрями та їхні обкладинки.
 
-After execution, check the website `/health`, which should return `OK`. Publish the matching bot version as well so source imports preserve manual edits and both applications support the shared login.
+У Neon SQL Editor запустіть повний файл потрібної міграції у режимі запису. Кожен файл містить атомарний SQL-блок. Після оновлення перевірте `/health` обох застосунків і сценарії, яких стосується зміна. Vercel запускає вебзастосунки зі схемою, яка вже є в базі.
 
-The generated SQL was exercised twice against empty and legacy-shaped databases in isolated PGlite PostgreSQL tests. These checks do not mean the migration has already been run against Neon. No production connection strings or data are included.
-
-References: [PostgreSQL DO](https://www.postgresql.org/docs/current/sql-do.html), [ALTER TABLE](https://www.postgresql.org/docs/current/sql-altertable.html).
-
-
-## User controls update
-
-After the base schema, run `002_user_controls.sql` before deploying the user-controls release of both apps. It adds submissions.revision and submissions.updated_at in one atomic, repeatable DO statement and retains existing rows. Do not create a separate database or branch. See [USER_CONTROLS.md](../USER_CONTROLS.md).
-
-
-## Profile photo and MFA
-
-Run `003_profile_security.sql` after 001/002, then set the same secret `AUTH_ENCRYPTION_KEY` on both production projects before enabling MFA. Existing accounts start with MFA disabled. See [SECURITY_PROFILE.md](../SECURITY_PROFILE.md).
-
-
-## Website directions
-
-Run `006_directions.sql` on the existing database before deploying the direction editor. The table stores custom directions, edits to built-in directions and uploaded covers. Built-in cards retain their original content until an administrator edits them.
+Для локального налаштування із кореня сайту скористайтеся командою `python -m scripts.setup_database`. Підключення до бази описане в [інструкції для сайту і бота](../docs/SHARED_DATABASE.md).

@@ -7,8 +7,8 @@ from PIL import Image
 from unittest.mock import AsyncMock, patch
 from sqlalchemy import select,func,text
 from tests.test_api import APITests,opportunity,ADMIN,PASSWORD
-import database as db
-import web_auth as auth
+from backend import database as db
+from backend import web_auth as auth
 
 
 class AdministrationTests(APITests):
@@ -160,7 +160,7 @@ class AdministrationTests(APITests):
 
     async def test_url_edit_keeps_original_source_identity_and_prevents_duplicates(self):
         await self.admin_login(); row=await self.listing()
-        with patch('admin_catalog.check_link',AsyncMock(return_value=True)):
+        with patch('backend.admin_catalog.check_link',AsyncMock(return_value=True)):
             response=await self.edit(row,url='https://example.org/corrected-course')
         self.assertEqual(response.status_code,200,response.text)
         await db.upsert_events([opportunity(3,url='https://example.org/course/1?utm_source=test',external_id='new-source-id')])
@@ -169,7 +169,7 @@ class AdministrationTests(APITests):
         self.assertEqual((await db.get_event(1)).url,'https://example.org/corrected-course')
         await db.upsert_events([opportunity(2)])
         row=(await self.client.get('/api/v1/admin/opportunities/1')).json()
-        with patch('admin_catalog.check_link',AsyncMock(return_value=True)):
+        with patch('backend.admin_catalog.check_link',AsyncMock(return_value=True)):
             response=await self.edit(row,url='https://example.org/course/2')
         self.assertEqual(response.status_code,409)
         self.assertEqual(response.json()['error']['code'],'duplicate_url')
@@ -184,7 +184,7 @@ class AdministrationTests(APITests):
         for values in ({'min_age':80,'max_age':20},{'title':'   '},{'url':'http://127.0.0.1/private'},
                        {'event_type':'unknown-key'},{'source':'Forged source'},{'is_free':False,'criteria':['free']}):
             self.assertEqual((await self.edit(row,**values)).status_code,422,values)
-        with patch('admin_catalog.check_link',AsyncMock(return_value=False)):
+        with patch('backend.admin_catalog.check_link',AsyncMock(return_value=False)):
             self.assertEqual((await self.edit(row,url='https://example.org/unavailable')).status_code,409)
         self.assertEqual((await self.client.get('/api/v1/admin/opportunities/999')).status_code,404)
 

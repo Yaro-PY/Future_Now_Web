@@ -13,9 +13,9 @@ os.environ.update(DATABASE_URL='sqlite+aiosqlite:///:memory:', VERCEL='0', ADMIN
 import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-import database as db
+from backend import database as db
 import main
-import web_auth as auth
+from backend import web_auth as auth
 
 PASSWORD = 'FutureNow-Website-Test-42'
 ADMIN = 7000000001
@@ -227,7 +227,7 @@ class APITests(unittest.IsolatedAsyncioTestCase):
 
     async def test_cold_start_does_not_migrate_or_import_telegram(self):
         with patch('main.SERVERLESS', True), patch('main.serverless_configuration_error', return_value=''), \
-             patch('database.init_db', AsyncMock()) as initialize:
+             patch('backend.database.init_db', AsyncMock()) as initialize:
             async with main.app.router.lifespan_context(main.app):
                 self.assertEqual((await self.client.get('/health')).status_code, 200)
                 initialize.assert_not_awaited()
@@ -235,7 +235,7 @@ class APITests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await self.client.get('/api/v1/bootstrap')).status_code, 503)
 
     async def test_shared_schema_contract_matches_bot(self):
-        bot_file = Path(__file__).resolve().parents[2] / 'User-flow-main' / 'User-flow-main' / 'database.py'
+        bot_file = Path(__file__).resolve().parents[2] / 'User-flow-main' / 'User-flow-main' / 'bot' / 'database.py'
         if not bot_file.exists(): self.skipTest('Bot checkout is not present')
         def models(filename):
             tree = ast.parse(filename.read_text(encoding='utf-8-sig'))

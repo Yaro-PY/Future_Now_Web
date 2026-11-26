@@ -4,10 +4,10 @@ from hashlib import sha256
 from pathlib import Path
 from unittest.mock import AsyncMock,patch
 
-import database as db
+from backend import database as db
 from tests.test_api import APITests,opportunity
-from opportunity_cover_assignments import OPPORTUNITY_COVER_NAMES
-from opportunity_pages import opportunity_path
+from backend.opportunity_cover_assignments import OPPORTUNITY_COVER_NAMES
+from backend.opportunity_pages import opportunity_path
 
 
 class PublicOpportunityTests(APITests):
@@ -118,12 +118,12 @@ class PublicOpportunityTests(APITests):
 
     async def test_public_registration_checks_closed_status_and_source_link(self):
         await self.seed()
-        with patch('web_api.check_link',new=AsyncMock(return_value=True)):
+        with patch('backend.web_api.check_link',new=AsyncMock(return_value=True)):
             response=await self.client.get('/api/v1/opportunities/1/registration')
             self.assertEqual(response.status_code,200)
             self.assertEqual(response.json()['url'],'https://example.org/course/1')
             self.assertEqual((await self.client.get('/api/v1/opportunities/2/registration')).status_code,409)
-        with patch('web_api.check_link',new=AsyncMock(return_value=False)):
+        with patch('backend.web_api.check_link',new=AsyncMock(return_value=False)):
             self.assertEqual((await self.client.get('/api/v1/opportunities/1/registration')).status_code,503)
 
     async def test_public_pages_fail_closed_when_service_is_not_ready(self):

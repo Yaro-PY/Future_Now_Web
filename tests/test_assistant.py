@@ -1,7 +1,7 @@
 """Real API/SQLite assistant regressions; no network or external AI model."""
 from datetime import timedelta
 from tests.test_api import APITests,opportunity
-import database as db
+from backend import database as db
 
 class AssistantTests(APITests):
     async def seed(self):

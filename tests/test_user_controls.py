@@ -10,8 +10,8 @@ from unittest.mock import AsyncMock, patch
 import httpx
 from sqlalchemy import select, func, text
 from tests.test_api import APITests, PASSWORD, ADMIN, opportunity
-import database as db
-import web_auth as auth
+from backend import database as db
+from backend import web_auth as auth
 
 
 def proposal(url='https://example.org/author-proposal'):
@@ -149,7 +149,7 @@ class UserControlsTests(unittest.IsolatedAsyncioTestCase):
         async def racing_check(url):
             self.assertIsNone(await db.change_own_submission(row['id'],owner,1))
             return True
-        with patch('web_api.check_link',racing_check):
+        with patch('backend.web_api.check_link',racing_check):
             response=await self.request('POST',f"/admin/proposals/{row['id']}/decision",json={'decision':'approved','expected_revision':1})
         self.assertEqual(response.status_code,409,response.text)
         self.assertEqual(await db.search_events({}),[])

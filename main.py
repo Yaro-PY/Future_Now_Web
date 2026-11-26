@@ -11,8 +11,8 @@ from fastapi.staticfiles import StaticFiles
 load_dotenv()
 os.environ.setdefault('DATABASE_URL', 'sqlite+aiosqlite:///./website.db')
 
-import database as db
-from web_api import install as install_api
+from backend import database as db
+from backend.web_api import install as install_api
 
 SERVERLESS = os.getenv('VERCEL') == '1'
 DEPLOYMENT_ENV = os.getenv('VERCEL_ENV', 'production')
@@ -64,7 +64,7 @@ HTML_HEADERS = {
     'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
 }
 
-from opportunity_pages import install as install_opportunity_pages
+from backend.opportunity_pages import install as install_opportunity_pages
 install_opportunity_pages(app, STATIC, HTML_HEADERS)
 
 
