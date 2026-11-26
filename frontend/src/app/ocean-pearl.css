@@ -1,0 +1,44 @@
+body:has(#app > .aura-bg),
+#app:has(> .aura-bg) {
+  background-color: #faf8f2;
+}
+
+#app:has(> .aura-bg) {
+  position: relative;
+  min-height: 100vh;
+}
+
+.aura-bg {
+  --aura-blur: 90px;
+  position: absolute;
+  inset: 0;
+  min-height: 100vh;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.aura-layer {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: multiply;
+  filter: blur(var(--aura-blur));
+  transform: translateZ(0);
+  opacity: .32;
+}
+
+.aura-layer-first {
+  background: linear-gradient(transparent 0%, rgb(178 235 242 / .12) 28%, #fff 18%, #4db6c8 68%, #2d6482 100%);
+}
+
+.aura-layer-second {
+  background: linear-gradient(transparent 0%, rgb(178 235 242 / .22) 34%, #fff 66%, #4db6c8 82%, #2d6482 100%);
+}
+
+.aura-bg ~ :is(.app-view, .page-footer) {
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 1024px) {
+  .aura-bg { --aura-blur: 130px; }
+}
