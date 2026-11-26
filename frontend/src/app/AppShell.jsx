@@ -5,7 +5,7 @@ import {PageRouter} from '../routing/PageRouter.jsx';
 import {LiquidGlass} from '../components/LiquidGlass.jsx';
 import {SiteAssistantSession} from '../components/SiteAssistantSession.jsx';
 import {ElectronicSpider} from '../components/ElectronicSpider.jsx';
-import './alpine-meadow.css';
+import './aqua-bubble.css';
 
 const Auth = lazy(() => import('../pages/Auth.jsx').then(module => ({default:module.AuthPage})));
 const Opportunity = lazy(() => import('../pages/Opportunity.jsx').then(module => ({default:module.OpportunityPage})));

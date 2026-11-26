@@ -1,0 +1,62 @@
+body:has(#app > .aura-bg),
+#app:has(> .aura-bg) {
+  background-color: #faf8f2;
+}
+
+#app:has(> .aura-bg) {
+  position: relative;
+  min-height: 100vh;
+}
+
+.aura-bg {
+  position: absolute;
+  inset: 0;
+  min-height: 100vh;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.aura-layer {
+  position: absolute;
+  inset: 0;
+  filter: blur(var(--aura-blur));
+  transform: translateZ(0);
+}
+
+/* Aqua Bubble */
+.aura-layer-first {
+  --aura-blur: 63px;
+  background:
+    radial-gradient(circle at 25% 40%, rgb(34 211 238 / .34) 0%, rgb(103 232 249 / .12) 32%, transparent 55%),
+    radial-gradient(circle at 72% 58%, rgb(14 165 233 / .28) 0%, rgb(125 211 252 / .10) 34%, transparent 58%);
+}
+
+.aura-layer-second {
+  --aura-blur: 30px;
+  background: radial-gradient(circle at 25% 40%, rgb(255 255 255 / .65) 0%, transparent 12%);
+  mix-blend-mode: multiply;
+}
+
+.aura-layer-third {
+  --aura-blur: 35px;
+  background: radial-gradient(circle at 72% 58%, rgb(255 255 255 / .55) 0%, transparent 13%);
+  mix-blend-mode: multiply;
+}
+
+.aura-layer-fourth {
+  --aura-blur: 50px;
+  background: linear-gradient(135deg, rgb(255 255 255 / .42) 0%, transparent 45%, rgb(6 182 212 / .12) 100%);
+  mix-blend-mode: multiply;
+}
+
+.aura-bg ~ :is(.app-view, .page-footer) {
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 1024px) {
+  .aura-layer-first { --aura-blur: 90px; }
+  .aura-layer-second { --aura-blur: 43px; }
+  .aura-layer-third { --aura-blur: 50px; }
+  .aura-layer-fourth { --aura-blur: 72px; }
+}
