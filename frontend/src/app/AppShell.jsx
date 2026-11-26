@@ -5,7 +5,7 @@ import {PageRouter} from '../routing/PageRouter.jsx';
 import {LiquidGlass} from '../components/LiquidGlass.jsx';
 import {SiteAssistantSession} from '../components/SiteAssistantSession.jsx';
 import {ElectronicSpider} from '../components/ElectronicSpider.jsx';
-import './ocean-pearl.css';
+import './alpine-meadow.css';
 
 const Auth = lazy(() => import('../pages/Auth.jsx').then(module => ({default:module.AuthPage})));
 const Opportunity = lazy(() => import('../pages/Opportunity.jsx').then(module => ({default:module.OpportunityPage})));
@@ -26,6 +26,8 @@ export function AppShell() {
     {showAura && <div className="aura-bg" aria-hidden="true">
       <div className="aura-layer aura-layer-first" />
       <div className="aura-layer aura-layer-second" />
+      <div className="aura-layer aura-layer-third" />
+      <div className="aura-layer aura-layer-fourth" />
     </div>}
     {user && !booting ? <SiteAssistantSession>{content}{showSpider && <ElectronicSpider roaming={roaming} />}</SiteAssistantSession> : content}<Suspense fallback={null}>{modal && <ModalContent key={modal.type + (modal.item?.id || '')} />}</Suspense><div id="toast" className={`toast ${notification ? 'visible' : ''}`} role="status" aria-live="polite">{notification?.message || ''}</div></>;
 }
